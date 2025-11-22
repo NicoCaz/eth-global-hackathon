@@ -1,6 +1,11 @@
+/* CDP Wallet SDK Variables - Required for CDP React Components */
+@import url("https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Rethink+Sans:ital,wght@0,400..800;1,400..800&display=swap");
+
 @import 'tailwindcss';
 
 @import 'tw-animate-css';
+
+
 
 @custom-variant dark (&:is(.dark *));
 
@@ -137,8 +142,6 @@ code {
   }
 }
 
-/* CDP Wallet SDK Variables - Required for CDP React Components */
-@import url("https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Rethink+Sans:ital,wght@0,400..800;1,400..800&display=swap");
 
 :root {
   --cdp-example-font-family: "Rethink Sans", system-ui, Avenir, Helvetica, Arial, sans-serif;
