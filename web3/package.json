@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "compile": "hardhat compile",
+    "compile": "hardhat compile --show-stack-traces",
     "test": "hardhat test",
     "deploy:baseSepolia": "hardhat ignition deploy scripts/deploy.ts --network baseSepolia",
     "deploy:local": "hardhat ignition deploy scripts/deploy.ts --network hardhat",
@@ -23,7 +23,7 @@
   },
   "homepage": "https://github.com/NicoCaz/eth-global-hackathon#readme",
   "dependencies": {
-    "@openzeppelin/contracts": "^5.4.0",
+    "@openzeppelin/contracts": "^4.9.6",
     "@pythnetwork/entropy-sdk-solidity": "^2.2.0",
     "hardhat": "^3.0.15"
   },
