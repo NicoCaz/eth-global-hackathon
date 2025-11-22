@@ -23,7 +23,6 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
     uint256 public constant MIN_TICKET_PRICE = 0.0001 ether;
     
     // Estado de la rifa
-    // Eliminado SalesClosed porque ya no hay proceso de cierre
     enum RaffleState { Active, EntropyRequested, DrawExecuted }
     RaffleState public state;
     
@@ -35,7 +34,6 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
     TicketRange[] public participants;
     uint256 public totalTickets;
     
-    // Eliminado cumulativeTickets ya que participants ahora es acumulativo per se
     
     // Ganador y distribución
     address public winner;
@@ -69,10 +67,10 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
      * @notice Constructor del contrato
      * @param _projectName Nombre del proyecto
      * @param _projectDescription Descripción del proyecto
-     * @param _projectPercentage Porcentaje para el proyecto (0-100)
-     * @param _ownerPercentage Porcentaje para el owner (0-100)
+     * @param _projectPercentage Porcentaje del proyecto en basis points (0-10000)
      * @param _entropyAddress Dirección del contrato de Pyth Entropy
      * @param _initialOwner Dirección del owner inicial
+     * @param _platformAdmin Dirección del administrador de la plataforma
      * @param _projectAddress Dirección del proyecto que recibirá fondos
      * @param _raffleDuration Duración de la rifa en segundos
      */
@@ -86,10 +84,11 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
         address _projectAddress,
         uint256 _raffleDuration
     ) Ownable(_initialOwner) {
-        require(_projectPercentage + OWNER_PERCENTAGE < 100, "Percentages too high");
         require(_projectPercentage > 0, "Project percentage must be > 0");
+        require(_projectPercentage + PLATFORM_FEE < BASIS_POINTS, "Percentages too high");
         require(_entropyAddress != address(0), "Invalid Entropy address");
         require(_projectAddress != address(0), "Invalid project address");
+        require(_platformAdmin != address(0), "Invalid admin address");
         require(_raffleDuration > 0, "Duration must be > 0");
         
         projectName = _projectName;
@@ -221,11 +220,14 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
         // Fee de plataforma fijo: 0.5%
         uint256 platformAmount = (totalBalance * PLATFORM_FEE) / BASIS_POINTS;
         
-        // Porcentaje para el proyecto (sobre el total)
-        uint256 projectAmount = (totalBalance * projectPercentage) / BASIS_POINTS;
+        // El resto del pozo se divide entre proyecto y ganador
+        uint256 distributablePool = totalBalance - platformAmount;
+        
+        // Porcentaje para el proyecto sobre el pozo restante
+        uint256 projectAmount = (distributablePool * projectPercentage) / BASIS_POINTS;
         
         // El resto va al ganador
-        uint256 winnerAmount = totalBalance - platformAmount - projectAmount;
+        uint256 winnerAmount = distributablePool - projectAmount;
         
         // Registrar pagos pendientes (patrón pull payment - más seguro)
         _asyncTransfer(projectAddress, projectAmount);
