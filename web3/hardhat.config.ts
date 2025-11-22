@@ -17,18 +17,11 @@ export default defineConfig({
     },
   },
   networks: {
-    // 0G Mainnet
-    og: {
+    // Base Sepolia Testnet
+    baseSepolia: {
       type: "http" as const,
-      url: process.env.OG_RPC_URL || "https://rpc.0g.ai",
-      chainId: Number(process.env.OG_CHAIN_ID) || 480,
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-    },
-    // 0G Testnet
-    ogTestnet: {
-      type: "http" as const,
-      url: process.env.OG_TESTNET_RPC_URL || "https://testnet-rpc.0g.ai",
-      chainId: Number(process.env.OG_TESTNET_CHAIN_ID) || 4801,
+      url: process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org",
+      chainId: 84532,
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
     // Hardhat Network local (para desarrollo)
