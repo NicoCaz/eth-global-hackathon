@@ -46,8 +46,7 @@ contract RaffleFactory is Ownable {
      * @notice Crea una nueva rifa
      * @param name Nombre del proyecto
      * @param description Descripción del proyecto
-     * @param projectPercentage Porcentaje para el proyecto (0-100)
-     * @param ownerPercentage Porcentaje para el owner (0-100)
+     * @param projectPercentage Porcentaje para el proyecto (Basis Points: 5000 = 50%)
      * @param projectAddress Dirección del proyecto que recibirá fondos
      * @param raffleDuration Duración de la rifa en segundos
      * @return Dirección del contrato de rifa creado
@@ -56,14 +55,13 @@ contract RaffleFactory is Ownable {
         string memory name,
         string memory description,
         uint256 projectPercentage,
-        uint256 ownerPercentage,
         address projectAddress,
         uint256 raffleDuration
     ) external returns (address) {
         require(bytes(name).length > 0, "Name cannot be empty");
-        require(projectPercentage + ownerPercentage < 100, "Percentages too high");
+        // Validar que projectPercentage + PLATFORM_FEE (50) < 10000
+        require(projectPercentage + 50 < 10000, "Percentages too high");
         require(projectPercentage > 0, "Project percentage must be > 0");
-        require(ownerPercentage > 0, "Owner percentage must be > 0");
         require(projectAddress != address(0), "Invalid project address");
         require(raffleDuration > 0, "Duration must be > 0");
         
@@ -72,7 +70,6 @@ contract RaffleFactory is Ownable {
             name,
             description,
             projectPercentage,
-            ownerPercentage,
             entropyAddress,
             msg.sender, // El creador de la rifa es el owner
             owner(), // El admin de la plataforma es el owner del factory
@@ -88,7 +85,7 @@ contract RaffleFactory is Ownable {
             address(raffle),
             name,
             projectPercentage,
-            ownerPercentage,
+            50, // Platform Fee
             msg.sender
         );
         
@@ -151,7 +148,7 @@ contract RaffleFactory is Ownable {
         projectName = raffle.projectName();
         state = raffle.state();
         totalTickets = raffle.totalTickets();
-        participantCount = raffle.getParticipantCount();
+        participantCount = raffle.getParticipantsCount();
     }
     
     /**

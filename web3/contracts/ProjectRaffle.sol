@@ -17,21 +17,25 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
     // Información del proyecto
     string public projectName;
     string public projectDescription;
-    uint256 public projectPercentage; // Porcentaje para el proyecto (0-100)
-    uint256 public ownerPercentage; // Porcentaje para el owner/mantenimiento (0-100)
+    uint256 public projectPercentage; // Porcentaje para el proyecto (Basis Points: 100 = 1%)
+    uint256 public constant BASIS_POINTS = 10000;
+    uint256 public constant PLATFORM_FEE = 50; // 0.5% (50/10000)
     uint256 public constant MIN_TICKET_PRICE = 0.0001 ether;
     
     // Estado de la rifa
-    enum RaffleState { Active, SalesClosed, EntropyRequested, DrawExecuted }
+    // Eliminado SalesClosed porque ya no hay proceso de cierre
+    enum RaffleState { Active, EntropyRequested, DrawExecuted }
     RaffleState public state;
     
     // Participantes y tickets
-    address[] public participants;
-    mapping(address => uint256) public tickets;
+    struct TicketRange {
+        address owner;
+        uint256 upperBound;
+    }
+    TicketRange[] public participants;
     uint256 public totalTickets;
     
-    // Optimización para selección de ganador
-    uint256[] private cumulativeTickets;
+    // Eliminado cumulativeTickets ya que participants ahora es acumulativo per se
     
     // Ganador y distribución
     address public winner;
@@ -76,16 +80,14 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
         string memory _projectName,
         string memory _projectDescription,
         uint256 _projectPercentage,
-        uint256 _ownerPercentage,
         address _entropyAddress,
         address _initialOwner,
         address _platformAdmin,
         address _projectAddress,
         uint256 _raffleDuration
     ) Ownable(_initialOwner) {
-        require(_projectPercentage + _ownerPercentage < 100, "Percentages too high");
+        require(_projectPercentage + OWNER_PERCENTAGE < 100, "Percentages too high");
         require(_projectPercentage > 0, "Project percentage must be > 0");
-        require(_ownerPercentage > 0, "Owner percentage must be > 0");
         require(_entropyAddress != address(0), "Invalid Entropy address");
         require(_projectAddress != address(0), "Invalid project address");
         require(_raffleDuration > 0, "Duration must be > 0");
@@ -93,7 +95,6 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
         projectName = _projectName;
         projectDescription = _projectDescription;
         projectPercentage = _projectPercentage;
-        ownerPercentage = _ownerPercentage;
         entropy = IEntropyV2(_entropyAddress);
         projectAddress = _projectAddress;
         platformAdmin = _platformAdmin;
@@ -116,43 +117,27 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
         require(block.timestamp < raffleStartTime + raffleDuration, "Raffle ended");
         require(msg.value >= MIN_TICKET_PRICE, "Minimum ticket price is 0.0001 ETH");
         
-        // Registrar participante si es la primera vez
-        if (tickets[msg.sender] == 0) {
-            participants.push(msg.sender);
-        }
-        
-        tickets[msg.sender] += msg.value;
         totalTickets += msg.value;
         
-        emit TicketPurchased(msg.sender, msg.value, tickets[msg.sender]);
+        // Guardar rango de tickets para este usuario
+        // El límite superior es el nuevo total de tickets
+        participants.push(TicketRange({
+            owner: msg.sender,
+            upperBound: totalTickets
+        }));
+        
+        emit TicketPurchased(msg.sender, msg.value, totalTickets); // Emitimos total acumulado
     }
     
     modifier onlyOwnerOrAdmin() {
         require(msg.sender == owner() || msg.sender == platformAdmin, "Not authorized");
         _;
     }
-
+    
     /**
-     * @notice Cierra la venta de tickets y construye el array acumulativo
-     * @dev Solo el owner o admin puede ejecutar esta función después de que termine el tiempo
+     * @notice Funcion obsoleta eliminada. El sorteo es incremental.
      */
-    function closeSalesAndBuildCumulative() external onlyOwnerOrAdmin {
-        require(state == RaffleState.Active, "Raffle not active");
-        require(block.timestamp >= raffleStartTime + raffleDuration, "Raffle still active");
-        require(participants.length > 0, "No participants");
-        require(cumulativeTickets.length == 0, "Already built");
-        
-        state = RaffleState.SalesClosed;
-        
-        // Construir array acumulativo para binary search
-        cumulativeTickets = new uint256[](participants.length);
-        uint256 cumulative = 0;
-        
-        for (uint256 i = 0; i < participants.length; i++) {
-            cumulative += tickets[participants[i]];
-            cumulativeTickets[i] = cumulative;
-        }
-    }
+    // function closeSalesAndBuildCumulative() external... ELIMINADA
     
     /**
      * @notice Solicita entropía a Pyth para ejecutar el sorteo
@@ -160,8 +145,8 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
      * @param userRandomNumber Número aleatorio generado por el usuario
      */
     function requestEntropy(bytes32 userRandomNumber) external payable onlyOwnerOrAdmin {
-        require(state == RaffleState.SalesClosed, "Sales not closed");
-        require(cumulativeTickets.length > 0, "Cumulative array not built");
+        require(state == RaffleState.Active, "Raffle not active");
+        require(block.timestamp >= raffleStartTime + raffleDuration, "Raffle still active");
         require(totalTickets > 0, "No tickets sold");
         require(participants.length > 0, "No participants");
         
@@ -232,22 +217,27 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
         
         uint256 totalBalance = address(this).balance;
         
-        // Calcular distribución
-        uint256 projectAmount = (totalBalance * projectPercentage) / 100;
-        uint256 ownerAmount = (totalBalance * ownerPercentage) / 100;
-        uint256 winnerAmount = totalBalance - projectAmount - ownerAmount;
+        // Calcular distribución (Base 10000)
+        // Fee de plataforma fijo: 0.5%
+        uint256 platformAmount = (totalBalance * PLATFORM_FEE) / BASIS_POINTS;
+        
+        // Porcentaje para el proyecto (sobre el total)
+        uint256 projectAmount = (totalBalance * projectPercentage) / BASIS_POINTS;
+        
+        // El resto va al ganador
+        uint256 winnerAmount = totalBalance - platformAmount - projectAmount;
         
         // Registrar pagos pendientes (patrón pull payment - más seguro)
         _asyncTransfer(projectAddress, projectAmount);
-        _asyncTransfer(owner(), ownerAmount);
+        _asyncTransfer(platformAdmin, platformAmount); // Paga al admin de la plataforma
         _asyncTransfer(winner, winnerAmount);
         
         emit FundsDistributed(
             projectAddress,
-            owner(),
+            platformAdmin,
             winner,
             projectAmount,
-            ownerAmount,
+            platformAmount,
             winnerAmount
         );
     }
@@ -258,43 +248,43 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
      * @return Dirección del ganador
      */
     function _selectWinner(bytes32 entropy) internal view returns (address) {
-        require(cumulativeTickets.length > 0, "Cumulative array not built");
         require(participants.length > 0, "No participants");
         
         // Usar entropía de Pyth para seleccionar ticket ganador
+        // El randomTicket está entre 0 y totalTickets - 1
         uint256 randomTicket = uint256(entropy) % totalTickets;
         
-        // Binary search en array acumulativo - O(log n)
+        // Binary search en array de participants (buscando upperBound) - O(log n)
         uint256 left = 0;
-        uint256 right = cumulativeTickets.length - 1;
+        uint256 right = participants.length - 1;
         
         while (left < right) {
             uint256 mid = (left + right) / 2;
             
-            if (cumulativeTickets[mid] <= randomTicket) {
-                left = mid + 1;
-            } else {
+            // Si randomTicket es menor que el límite superior de este rango,
+            // el ganador podría ser este o uno anterior.
+            if (participants[mid].upperBound > randomTicket) {
                 right = mid;
+            } else {
+                // Si randomTicket es >= upperBound, el ganador está después
+                left = mid + 1;
             }
         }
         
-        return participants[left];
+        return participants[left].owner;
     }
     
     /**
      * @notice Obtiene el array de participantes
      * @return Array de direcciones de participantes
      */
-    function getParticipants() external view returns (address[] memory) {
-        return participants;
+    function getParticipantsCount() external view returns (uint256) {
+        return participants.length;
     }
     
-    /**
-     * @notice Obtiene el número de participantes
-     * @return Cantidad de participantes
-     */
-    function getParticipantCount() external view returns (uint256) {
-        return participants.length;
+    function getTicketRange(uint256 index) external view returns (address owner, uint256 upperBound) {
+        TicketRange memory range = participants[index];
+        return (range.owner, range.upperBound);
     }
     
     /**
@@ -333,7 +323,6 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
      */
     function previewWinner(bytes32 entropy) external view returns (address) {
         require(participants.length > 0, "No participants");
-        require(cumulativeTickets.length > 0, "Cumulative array not built");
         return _selectWinner(entropy);
     }
 }
