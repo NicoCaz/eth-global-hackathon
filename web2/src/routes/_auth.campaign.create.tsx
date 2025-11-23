@@ -255,7 +255,7 @@ function CreateCampaignForm() {
                 }
 
                 const presets = [
-                  { label: 'In 5 minutes', minutes: 5 },
+                  { label: 'In 1 day', minutes: 24 * 60 },
                   { label: 'In 1 week', minutes: 7 * 24 * 60 },
                   { label: 'In 1 month', minutes: 30 * 24 * 60 },
                   { label: 'In 3 months', minutes: 90 * 24 * 60 },
