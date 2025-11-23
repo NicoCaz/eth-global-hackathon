@@ -18,6 +18,7 @@ import { Route as DemoTanstackQueryRouteImport } from './routes/demo/tanstack-qu
 import { Route as DemoStoreRouteImport } from './routes/demo/store'
 import { Route as DemoDrizzleRouteImport } from './routes/demo/drizzle'
 import { Route as CampaignCampaignIdRouteImport } from './routes/campaign.$campaignId'
+import { Route as AuthDashboardRouteImport } from './routes/_auth.dashboard'
 import { Route as DemoStartServerFuncsRouteImport } from './routes/demo/start.server-funcs'
 import { Route as DemoStartApiRequestRouteImport } from './routes/demo/start.api-request'
 import { Route as DemoFormSimpleRouteImport } from './routes/demo/form.simple'
@@ -74,6 +75,11 @@ const CampaignCampaignIdRoute = CampaignCampaignIdRouteImport.update({
   id: '/campaign/$campaignId',
   path: '/campaign/$campaignId',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthDashboardRoute = AuthDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthRoute,
 } as any)
 const DemoStartServerFuncsRoute = DemoStartServerFuncsRouteImport.update({
   id: '/demo/start/server-funcs',
@@ -142,6 +148,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof ProfileRoute
   '/test-factory': typeof TestFactoryRoute
   '/wallet': typeof WalletRoute
+  '/dashboard': typeof AuthDashboardRoute
   '/campaign/$campaignId': typeof CampaignCampaignIdRoute
   '/demo/drizzle': typeof DemoDrizzleRoute
   '/demo/store': typeof DemoStoreRoute
@@ -164,6 +171,7 @@ export interface FileRoutesByTo {
   '/profile': typeof ProfileRoute
   '/test-factory': typeof TestFactoryRoute
   '/wallet': typeof WalletRoute
+  '/dashboard': typeof AuthDashboardRoute
   '/campaign/$campaignId': typeof CampaignCampaignIdRoute
   '/demo/drizzle': typeof DemoDrizzleRoute
   '/demo/store': typeof DemoStoreRoute
@@ -188,6 +196,7 @@ export interface FileRoutesById {
   '/profile': typeof ProfileRoute
   '/test-factory': typeof TestFactoryRoute
   '/wallet': typeof WalletRoute
+  '/_auth/dashboard': typeof AuthDashboardRoute
   '/campaign/$campaignId': typeof CampaignCampaignIdRoute
   '/demo/drizzle': typeof DemoDrizzleRoute
   '/demo/store': typeof DemoStoreRoute
@@ -212,6 +221,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/test-factory'
     | '/wallet'
+    | '/dashboard'
     | '/campaign/$campaignId'
     | '/demo/drizzle'
     | '/demo/store'
@@ -234,6 +244,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/test-factory'
     | '/wallet'
+    | '/dashboard'
     | '/campaign/$campaignId'
     | '/demo/drizzle'
     | '/demo/store'
@@ -257,6 +268,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/test-factory'
     | '/wallet'
+    | '/_auth/dashboard'
     | '/campaign/$campaignId'
     | '/demo/drizzle'
     | '/demo/store'
@@ -362,6 +374,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CampaignCampaignIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_auth/dashboard': {
+      id: '/_auth/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthDashboardRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/demo/start/server-funcs': {
       id: '/demo/start/server-funcs'
       path: '/demo/start/server-funcs'
@@ -450,11 +469,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthRouteChildren {
+  AuthDashboardRoute: typeof AuthDashboardRoute
   AuthCampaignCreateRoute: typeof AuthCampaignCreateRoute
   AuthCampaignCampaignIdDonateRoute: typeof AuthCampaignCampaignIdDonateRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
+  AuthDashboardRoute: AuthDashboardRoute,
   AuthCampaignCreateRoute: AuthCampaignCreateRoute,
   AuthCampaignCampaignIdDonateRoute: AuthCampaignCampaignIdDonateRoute,
 }

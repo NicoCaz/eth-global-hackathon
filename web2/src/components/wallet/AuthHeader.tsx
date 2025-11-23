@@ -71,6 +71,12 @@ export default function AuthHeader() {
         >
           Home
         </Link>
+        <Link 
+          to="/dashboard" 
+          className="ml-6 text-foreground hover:text-muted-foreground transition-colors font-medium"
+        >
+          Your Campaigns
+        </Link>
       </div>
 
       <div className="flex flex-row items-center gap-4">

@@ -3,29 +3,10 @@ import { Link } from '@tanstack/react-router'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
-import { Clock, Target, Trophy } from 'lucide-react'
+import { Clock, ExternalLink, LinkIcon, Target, Trophy } from 'lucide-react'
+import { Campaign } from './CampaignCard'
 
-export interface Campaign {
-  id: string
-  contractAddress: string
-  creatorUserId: string
-  creatorWalletAddress: string
-  title: string
-  description: string
-  logo: string | null
-  logoMimeType: string | null
-  rafflePercentage: number
-  goalAmount: string | null
-  endDate: Date
-  status: string
-  totalRaised: string
-  rafflePot: string
-  donationCount: number
-  createdAt: Date
-  updatedAt: Date
-}
-
-interface CampaignCardProps {
+interface OwnerCampaignCardProps {
   campaign: Campaign
 }
 
@@ -64,7 +45,7 @@ function getStatusBadge(status: string) {
   }
 }
 
-export function CampaignCard({ campaign }: CampaignCardProps) {
+export function OwnerCampaignCard({ campaign }: OwnerCampaignCardProps) {
   const [timeRemaining, setTimeRemaining] = useState<string>(formatTimeRemaining(campaign.endDate))
 
   useEffect(() => {
@@ -99,16 +80,19 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
       {/* Main Content */}
       <div className="flex-1 min-w-0 flex flex-col justify-center">
         <div className="flex items-center gap-2 mb-1">
-          <h3 className="text-base font-semibold truncate text-foreground">
+          <Link 
+            to="/campaign/$campaignId" 
+            params={{ campaignId: campaign.id }}
+            target='_blank'
+            className="text-base font-semibold truncate text-foreground hover:underline flex items-center gap-1"
+          >
             {campaign.title}
-          </h3>
+            <ExternalLink className="w-3 h-3" />
+          </Link>
           {getStatusBadge(campaign.status)}
         </div>
-        <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-          {campaign.description}
-        </p>
         
-        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+        <div className="flex items-center gap-4 text-xs text-muted-foreground mt-2">
           <div className="flex items-center gap-1">
             <Clock className="w-3 h-3" />
             <span>{timeRemaining}</span>
@@ -132,17 +116,11 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
           )}
         </div>
 
-        <Button 
-          variant="secondary" 
-          size="sm"
-          className="w-full"
-          asChild
-        >
-          <Link to="/campaign/$campaignId" params={{ campaignId: campaign.id }}>
-            {campaign.status === 'active' ? 'Back Project' : 'View Details'}
-          </Link>
+        <Button variant="outline" className="w-full" disabled>
+          End Campaign
         </Button>
       </div>
     </div>
   )
 }
+
