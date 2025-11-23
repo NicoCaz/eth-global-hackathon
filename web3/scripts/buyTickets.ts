@@ -2,8 +2,8 @@ import { JsonRpcProvider, Wallet, Contract, parseEther } from "ethers";
 import * as dotenv from "dotenv";
 import ProjectRaffleArtifact from "../artifacts/contracts/ProjectRaffle.sol/ProjectRaffle.json" assert { type: "json" };
 
-const RAFFLE_ADDRESS = "0xEbDc5cb30f4aE53EF6852c548a83b89098cA9696";
-const AMOUNT_ETH = "0.01";
+const RAFFLE_ADDRESS = "0x77F9eBe8872D6844C4c1f404dE40E274AB76708d";
+const AMOUNT_ETH = "0.001";
 
 dotenv.config();
 
