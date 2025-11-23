@@ -25,7 +25,10 @@ function App() {
 
   return (
     <div className="min-h-screen bg-background text-foreground relative">
-      <div className="absolute top-6 right-6 z-10">
+      <div className="absolute top-0 left-0 z-10 flex items-center gap-2 !w-full justify-between p-4">
+
+<span className="font-medium text-foreground/90">tanly.app</span>
+
         <Link to="/dashboard" className="text-sm font-medium hover:text-muted-foreground flex items-center gap-1">
           Dashboard
           <ArrowRight className="size-3" />
@@ -40,20 +43,20 @@ function App() {
               Kickstarter meets Lottery.
             </h1>
             
-            <p className="text-xl text-center text-muted-foreground mb-4 font-light max-w-2xl leading-relaxed">
-              Fund innovative projects. Back the projects you believe in, and you might just become the lucky winner of the prize pool. Crowdfunding reimagined.
+            <p className="text-xl text-center text-muted-foreground mb-8 font-light max-w-2xl leading-relaxed">
+              Support creators and stand a chance to win. A portion of every pledge goes into a prize pot awarded to one lucky backer. Crowdfunding with a reward.
             </p>
 
             <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-primary/90">
-              <div className="flex items-center gap-2">
-                <Zap className="w-4 h-4 text-yellow-500" />
+              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/50 border border-border">
+                <Trophy className="w-4 h-4 text-amber-500" />
+                <span className="font-medium">Win the Prize Pot</span>
+              </div>
+              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/50 border border-border">
+                <Zap className="w-4 h-4 text-blue-500" />
                 <span>Blockchain Verified</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Trophy className="w-4 h-4 text-cyan-500" />
-                <span>Fair Raffle System</span>
-              </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/50 border border-border">
                 <Sparkles className="w-4 h-4 text-purple-500" />
                 <span>Support Innovation</span>
               </div>
@@ -73,7 +76,7 @@ function App() {
             <Button variant="secondary" size="sm" asChild>
               <Link to="/campaign/create" className="flex items-center gap-2">
                 Create Campaign
-                <Plus className="w-4 h-4" />
+                <Plus className="size-3" />
               </Link>
             </Button>
           </div>

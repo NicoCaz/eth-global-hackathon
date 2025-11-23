@@ -97,7 +97,7 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 min-w-0 flex flex-col justify-center">
+      <div className="flex-1 min-w-0 flex flex-col justify-start">
         <div className="flex items-center gap-2 mb-1">
           <h3 className="text-base font-semibold truncate text-foreground">
             {campaign.title}
@@ -108,32 +108,56 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
           {campaign.description}
         </p>
         
-        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+        <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3">
           <div className="flex items-center gap-1">
             <Clock className="w-3 h-3" />
-            <span>{timeRemaining}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Trophy className="w-3 h-3" />
-            <span>{Number.parseFloat(campaign.rafflePot).toFixed(4)} ETH pot</span>
+            <span>{timeRemaining} left</span>
           </div>
         </div>
-      </div>
+        <div className="flex-1"></div>
 
-      {/* Right Actions / Stats */}
-      <div className="shrink-0 flex flex-col md:items-end justify-center gap-3 md:w-48">
-        <div className="w-full text-right">
-          <div className="text-sm font-medium text-foreground mb-1">
-            {totalRaised.toFixed(4)} ETH
-            {goalAmount && <span className="text-muted-foreground font-normal"> / {goalAmount}</span>}
+
+
+
+        <div className="w-full">
+          <div className="flex justify-between items-baseline">
+            <span className="text-sm font-medium tabular-nums mb-1.5">
+              {totalRaised.toFixed(4)} <span className="text-muted-foreground font-normal text-xs">ETH raised</span>
+            </span>
+            {goalAmount && (
+              <span className="text-xs text-muted-foreground tabular-nums">
+                of {goalAmount} ETH
+              </span>
+            )}
           </div>
           {goalAmount && (
             <Progress value={progressPercentage} className="h-1.5" />
           )}
         </div>
+      </div>
+
+      {/* Right Actions / Stats */}
+      <div className="shrink-0 flex flex-col md:items-end justify-center gap-1.5 md:w-52 md:pl-6 md:border-l border-border/40">
+        
+        {/* Pot Highlight */}
+        <div className="w-full flex flex-col md:items-end">
+           <div className="text-xs font-medium text-amber-500 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+             <Trophy className="w-3.5 h-3.5" />
+             Win Potential
+           </div>
+           <div className="text-2xl font-bold text-foreground tabular-nums">
+             {Number.parseFloat(campaign.rafflePot).toFixed(4)} <span className="text-sm font-normal text-muted-foreground">ETH</span>
+           </div>
+        </div>
+
+        <div className="w-full flex-1"></div>
+
+        <p className="text-xs text-muted-foreground">
+          {campaign.rafflePercentage}% to the raffle pot.
+        </p>
 
         <Button 
-          variant="secondary" 
+          variant={campaign.status === 'active' ? 'default' : 'secondary'}
           size="sm"
           className="w-full"
           asChild
