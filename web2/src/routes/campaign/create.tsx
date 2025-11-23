@@ -5,6 +5,12 @@ import { db } from '@/db'
 import { campaigns } from '@/db/schema'
 import { useAppForm } from '@/hooks/demo.form'
 import { useNavigate } from '@tanstack/react-router'
+import { CDPReactProvider } from "@coinbase/cdp-react";
+import { useIsInitialized, useIsSignedIn } from "@coinbase/cdp-hooks";
+import { CDP_CONFIG } from '@/config/cdp'
+import { theme } from '@/config/theme'
+import SignInScreen from '@/components/wallet/SignInScreen'
+import Loading from '@/components/wallet/Loading'
 
 // Validation Schema
 const createCampaignSchema = z.object({
@@ -51,6 +57,37 @@ export const Route = createFileRoute('/campaign/create')({
 })
 
 function CreateCampaign() {
+  return (
+    <CDPReactProvider config={CDP_CONFIG} theme={theme}>
+      <CreateCampaignContent />
+    </CDPReactProvider>
+  )
+}
+
+function CreateCampaignContent() {
+  const { isInitialized } = useIsInitialized()
+  const { isSignedIn } = useIsSignedIn()
+
+  if (!isInitialized) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loading />
+      </div>
+    )
+  }
+
+  if (!isSignedIn) {
+    return (
+      <div className="flex items-center justify-center min-h-screen p-4">
+        <SignInScreen />
+      </div>
+    )
+  }
+
+  return <CreateCampaignForm />
+}
+
+function CreateCampaignForm() {
   const navigate = useNavigate()
   
   // Calculate min and max dates
@@ -376,4 +413,3 @@ function CreateCampaign() {
     </div>
   )
 }
-
