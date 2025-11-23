@@ -7,7 +7,6 @@ import { Link } from '@tanstack/react-router';
 import EOATransaction from "./EOATransaction";
 import WalletHeader from "./WalletHeader";
 import UserBalance from "./UserBalance";
-import { fundWallet } from "../../lib/fund";
 
 /**
  * Create a viem client to access user's balance on the Base Sepolia network
@@ -43,31 +42,6 @@ function SignedInScreen() {
     const interval = setInterval(getBalance, 500);
     return () => clearInterval(interval);
   }, [getBalance]);
-
-  // Add auto-funding logic
-  useEffect(() => {
-    const checkAndFund = async () => {
-      if (!evmAddress || balance === undefined) return;
-
-      const balanceEth = Number(formatEther(balance));
-
-      // If balance is very low (e.g., < 0.01 ETH)
-      if (balanceEth < 0.0001) {
-        console.log("Low balance detected, attempting to auto-fund...");
-        try {
-          const result = await fundWallet({ data: evmAddress });
-          if (result.success) {
-            console.log("Auto-funded successfully!", result.txHash);
-            getBalance(); // Refresh balance
-          }
-        } catch (err) {
-          console.error("Failed to auto-fund:", err);
-        }
-      }
-    };
-
-    checkAndFund();
-  }, [balance, evmAddress, getBalance]);
 
   return (
     <>

@@ -51,7 +51,7 @@ export const fundWallet = createServerFn({ method: "POST" })
         console.log("Server wallet low, requesting faucet funds...");
         
         // Try to get funds multiple times if needed
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < 2; i++) {
            try {
              console.log(`Requesting from faucet (attempt ${i+1})...`);
              const faucetTx = await wallet.faucet();

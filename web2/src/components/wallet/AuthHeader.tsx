@@ -1,15 +1,42 @@
 import { Link } from '@tanstack/react-router'
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useEvmAddress } from "@coinbase/cdp-hooks";
 import { SignInModal } from "@coinbase/cdp-react/components/SignInModal";
 import { SignOutButton } from "@coinbase/cdp-react/components/SignOutButton";
+import { createPublicClient, http, formatEther } from "viem";
+import { baseSepolia } from "viem/chains";
 import { IconCheck, IconCopy, IconUser } from "./Icons";
 import { Button } from "../ui/button";
+
+const client = createPublicClient({
+  chain: baseSepolia,
+  transport: http(),
+});
 
 export default function AuthHeader() {
   const { evmAddress } = useEvmAddress();
   const [isCopied, setIsCopied] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [balance, setBalance] = useState<bigint | undefined>(undefined);
+
+  const formattedBalance = useMemo(() => {
+    if (balance === undefined) return undefined;
+    return Number(formatEther(balance)).toFixed(4);
+  }, [balance]);
+
+  const getBalance = useCallback(async () => {
+    if (!evmAddress) return;
+    const weiBalance = await client.getBalance({
+      address: evmAddress,
+    });
+    setBalance(weiBalance);
+  }, [evmAddress]);
+
+  useEffect(() => {
+    getBalance();
+    const interval = setInterval(getBalance, 2000); // Check every 2 seconds
+    return () => clearInterval(interval);
+  }, [getBalance]);
 
   const formatAddress = useCallback((address: string) => {
     if (!address) return "";
@@ -48,6 +75,17 @@ export default function AuthHeader() {
       <div className="flex flex-row items-center gap-4">
         {evmAddress ? (
           <>
+            <div className="flex items-center gap-2">
+              <span className="hidden sm:inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                Sepolia
+              </span>
+              {formattedBalance && (
+                <span className="text-sm font-medium flex items-center gap-1">
+                  <img src="/eth.svg" alt="ETH" className="h-4 w-4" />
+                  {formattedBalance} ETH
+                </span>
+              )}
+            </div>
             <button
               aria-label="copy wallet address"
               className="hidden sm:flex flex-row items-center bg-transparent border-0 text-foreground cursor-pointer p-0 group hover:text-muted-foreground transition-colors"
