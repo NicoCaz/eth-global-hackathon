@@ -53,13 +53,13 @@ contract DistributionEdgeCasesTest {
         
         // Verify the math:
         // If totalBalance = 100 ETH
-        // Platform fee = 100 * 50 / 10000 = 0.5 ETH
-        // DistributablePool = 100 - 0.5 = 99.5 ETH
-        // Project gets = 99.5 * 10000 / 10000 = 99.5 ETH (100% of pool)
-        // Winner gets = 99.5 - 99.5 = 0 ETH (0% for winner)
+        // Platform fee = 100 * 5 / 10000 = 0.005 ETH (0.05%)
+        // DistributablePool = 100 - 0.005 = 99.995 ETH
+        // Project gets = 99.995 * 10000 / 10000 = 99.995 ETH (100% of pool)
+        // Winner gets = 99.995 - 99.995 = 0 ETH (0% for winner)
         
         require(raffle.projectPercentage() == 10000, "Should be 100%");
-        require(raffle.PLATFORM_FEE() == 50, "Platform fee should be 50");
+        require(raffle.PLATFORM_FEE() == 5, "Platform fee should be 5 basis points (0.05%)");
         require(raffle.BASIS_POINTS() == 10000, "BASIS_POINTS should be 10000");
     }
     
@@ -113,7 +113,7 @@ contract DistributionEdgeCasesTest {
         ProjectRaffle raffle = ProjectRaffle(raffleAddress);
         
         // Verify platform fee constant
-        require(raffle.PLATFORM_FEE() == 50, "Platform fee should be 50 basis points (0.5%)");
+        require(raffle.PLATFORM_FEE() == 5, "Platform fee should be 5 basis points (0.05%)");
     }
     
     function test_ProjectPercentage_Range() public {

@@ -71,9 +71,9 @@ contract FundDistributionTest {
             );
         
         // Verify calculations
-        // Platform fee: 1 ETH * 50 / 10000 = 0.00005 ETH (0.5%)
-        uint256 expectedPlatformCalc = (totalContributed * 50) / 10000;
-        require(expectedPlatform == expectedPlatformCalc, "Platform fee should be 0.5%");
+        // Platform fee: 1 ETH * 5 / 10000 = 0.0005 ETH (0.05%)
+        uint256 expectedPlatformCalc = (totalContributed * 5) / 10000;
+        require(expectedPlatform == expectedPlatformCalc, "Platform fee should be 0.05%");
         
         // Distributable pool: 1 ETH - platform fee
         uint256 distributablePool = totalContributed - expectedPlatform;
@@ -119,16 +119,16 @@ contract FundDistributionTest {
                 raffle100.BASIS_POINTS()
             );
         
-        // Platform: 1 ETH * 50 / 10000 = 0.005 ETH (0.5%)
-        require(expectedPlatform == (contribution * 50) / 10000, "Platform should get 0.5%");
+        // Platform: 1 ETH * 5 / 10000 = 0.0005 ETH (0.05%)
+        require(expectedPlatform == (contribution * 5) / 10000, "Platform should get 0.05%");
         
-        // Distributable pool: 1 ETH - 0.005 ETH = 0.995 ETH
+        // Distributable pool: 1 ETH - 0.0005 ETH = 0.9995 ETH
         uint256 distributablePool = contribution - expectedPlatform;
         
-        // Project: 0.995 ETH * 10000 / 10000 = 0.995 ETH (100% of pool)
+        // Project: 0.9995 ETH * 10000 / 10000 = 0.9995 ETH (100% of pool)
         require(expectedProject == distributablePool, "Project should get 100% of distributable pool");
         
-        // Winner: 0.995 ETH - 0.995 ETH = 0 ETH (0% for winner)
+        // Winner: 0.9995 ETH - 0.9995 ETH = 0 ETH (0% for winner)
         require(expectedWinner == 0, "Winner should receive 0");
         
         // Verify total
@@ -162,8 +162,8 @@ contract FundDistributionTest {
                 raffleMin.BASIS_POINTS()
             );
         
-        // Platform: 0.5%
-        require(expectedPlatform == (contribution * 50) / 10000, "Platform should get 0.5%");
+        // Platform: 0.05%
+        require(expectedPlatform == (contribution * 5) / 10000, "Platform should get 0.05%");
         
         // Distributable pool
         uint256 distributablePool = contribution - expectedPlatform;
@@ -250,22 +250,22 @@ contract FundDistributionTest {
                 raffle.BASIS_POINTS()
             );
         
-        // Platform: 1000 ETH * 50 / 10000 = 5 ETH
-        uint256 expectedPlatformCalc = (largeAmount * 50) / 10000;
-        require(expectedPlatform == expectedPlatformCalc, "Platform should get 5 ETH");
+        // Platform: 1000 ETH * 5 / 10000 = 0.5 ETH
+        uint256 expectedPlatformCalc = (largeAmount * 5) / 10000;
+        require(expectedPlatform == expectedPlatformCalc, "Platform should get 0.5 ETH");
         
-        // Distributable pool: 1000 ETH - 5 ETH = 995 ETH
+        // Distributable pool: 1000 ETH - 0.5 ETH = 999.5 ETH
         uint256 distributablePool = largeAmount - expectedPlatform;
         uint256 expectedDistributablePool = largeAmount - expectedPlatformCalc;
-        require(distributablePool == expectedDistributablePool, "Distributable pool should be 995 ETH");
+        require(distributablePool == expectedDistributablePool, "Distributable pool should be 999.5 ETH");
         
-        // Project: 995 ETH * 5000 / 10000 = 497.5 ETH
+        // Project: 999.5 ETH * 5000 / 10000 = 499.75 ETH
         uint256 expectedProjectCalc = (distributablePool * 5000) / 10000;
-        require(expectedProject == expectedProjectCalc, "Project should get 497.5 ETH");
+        require(expectedProject == expectedProjectCalc, "Project should get 499.75 ETH");
         
-        // Winner: 995 ETH - 497.5 ETH = 497.5 ETH
+        // Winner: 999.5 ETH - 499.75 ETH = 499.75 ETH
         uint256 expectedWinnerCalc = distributablePool - expectedProject;
-        require(expectedWinner == expectedWinnerCalc, "Winner should get 497.5 ETH");
+        require(expectedWinner == expectedWinnerCalc, "Winner should get 499.75 ETH");
         
         // Verify total
         require(
@@ -314,7 +314,7 @@ contract FundDistributionTest {
     
     function test_DistributionConstants() public view {
         // Verify constants
-        require(raffle.PLATFORM_FEE() == 50, "PLATFORM_FEE should be 50 basis points (0.5%)");
+        require(raffle.PLATFORM_FEE() == 5, "PLATFORM_FEE should be 5 basis points (0.05%)");
         require(raffle.BASIS_POINTS() == 10000, "BASIS_POINTS should be 10000");
         require(raffle.projectPercentage() == PROJECT_PERCENTAGE, "Project percentage should match");
     }
@@ -352,7 +352,7 @@ contract FundDistributionTest {
         
         // Test with different percentages
         for (uint256 percentage = 1000; percentage <= 9000; percentage += 1000) { // 10%, 20%, ..., 90%
-            uint256 platform = (amount * 50) / 10000;
+            uint256 platform = (amount * 5) / 10000;
             uint256 distributablePool = amount - platform;
             uint256 project = (distributablePool * percentage) / 10000;
             uint256 winner = distributablePool - project;
