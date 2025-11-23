@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
-import { Clock, ExternalLink, LinkIcon, Target, Trophy } from 'lucide-react'
+import { Clock, ExternalLink, Target, Trophy } from 'lucide-react'
 import { Campaign } from './CampaignCard'
+import { EndCampaignButton } from './wallet/EndCampaignButton'
 
 interface OwnerCampaignCardProps {
   campaign: Campaign
@@ -116,9 +116,10 @@ export function OwnerCampaignCard({ campaign }: OwnerCampaignCardProps) {
           )}
         </div>
 
-        <Button variant="outline" className="w-full" disabled>
-          End Campaign
-        </Button>
+        <EndCampaignButton 
+          campaignAddress={campaign.contractAddress}
+          donationCount={campaign.donationCount}
+        />
       </div>
     </div>
   )

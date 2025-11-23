@@ -53,7 +53,7 @@ export function DeployCampaignButton({
       // Calculate duration in seconds
       const end = new Date(endDate).getTime();
       const now = new Date().getTime();
-      const durationSeconds = Math.max(0, Math.floor((end - now) / 1000));
+      const durationSeconds = 60 //Math.max(0, Math.floor((end - now) / 1000));
 
       // Basis points (1% = 100)
       const percentageBasisPoints = Math.floor(projectPercentage * 100);
