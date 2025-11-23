@@ -1,6 +1,7 @@
 import { defineConfig } from "hardhat/config";
-import "@nomicfoundation/hardhat-ignition";
-import "@nomicfoundation/hardhat-ethers";
+import hardhatIgnition from "@nomicfoundation/hardhat-ignition";
+import hardhatEthers from "@nomicfoundation/hardhat-ethers";
+import hardhatVerify from "@nomicfoundation/hardhat-verify";
 import * as dotenv from "dotenv";
 
 dotenv.config();
@@ -30,4 +31,10 @@ export default defineConfig({
       chainId: 1337,
     },
   },
+  etherscan: {
+    apiKey: {
+      baseSepolia: process.env.BASESCAN_API_KEY || "",
+    },
+  },
+  plugins: [hardhatIgnition, hardhatEthers, hardhatVerify],
 });

@@ -4,9 +4,9 @@ pragma solidity ^0.8.28;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import { PullPayment } from "@openzeppelin/contracts/security/PullPayment.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import { IEntropyConsumer } from "@pythnetwork/entropy-sdk-solidity/IEntropyConsumer.sol";
-import { IEntropyV2 } from "@pythnetwork/entropy-sdk-solidity/IEntropyV2.sol";
-
+import { IEntropyConsumer } from "./interfaces/IEntropyConsumer.sol";
+import { IEntropyV2 } from "./interfaces/IEntropyV2.sol";
+ 
 /**
  * @title ProjectRaffle
  * @notice Contrato de rifa para proyectos con integración de Pyth Entropy
@@ -83,13 +83,14 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
         address _platformAdmin,
         address _projectAddress,
         uint256 _raffleDuration
-    ) Ownable(_initialOwner) {
+    ) {
         require(_projectPercentage > 0, "Project percentage must be > 0");
         require(_projectPercentage + PLATFORM_FEE < BASIS_POINTS, "Percentages too high");
         require(_entropyAddress != address(0), "Invalid Entropy address");
         require(_projectAddress != address(0), "Invalid project address");
         require(_platformAdmin != address(0), "Invalid admin address");
         require(_raffleDuration > 0, "Duration must be > 0");
+        require(_initialOwner != address(0), "Invalid owner address");
         
         projectName = _projectName;
         projectDescription = _projectDescription;
@@ -105,6 +106,7 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
         require(entropyProvider != address(0), "No default provider available");
         
         state = RaffleState.Active;
+        _transferOwnership(_initialOwner);
     }
     
     /**
@@ -246,15 +248,15 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
     
     /**
      * @notice Selecciona el ganador usando Binary Search - O(log n)
-     * @param entropy Entropía generada por Pyth
+     * @param entropySeed Entropía generada por Pyth
      * @return Dirección del ganador
      */
-    function _selectWinner(bytes32 entropy) internal view returns (address) {
+    function _selectWinner(bytes32 entropySeed) internal view returns (address) {
         require(participants.length > 0, "No participants");
         
         // Usar entropía de Pyth para seleccionar ticket ganador
         // El randomTicket está entre 0 y totalTickets - 1
-        uint256 randomTicket = uint256(entropy) % totalTickets;
+        uint256 randomTicket = uint256(entropySeed) % totalTickets;
         
         // Binary search en array de participants (buscando upperBound) - O(log n)
         uint256 left = 0;
@@ -320,12 +322,12 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
     
     /**
      * @notice Obtiene información del ganador potencial sin ejecutar el sorteo
-     * @param entropy Entropía de prueba
+     * @param entropySeed Entropía de prueba
      * @return Dirección del potencial ganador
      */
-    function previewWinner(bytes32 entropy) external view returns (address) {
+    function previewWinner(bytes32 entropySeed) external view returns (address) {
         require(participants.length > 0, "No participants");
-        return _selectWinner(entropy);
+        return _selectWinner(entropySeed);
     }
 }
 

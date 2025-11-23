@@ -38,9 +38,11 @@ contract RaffleFactory is Ownable {
     constructor(
         address _entropyAddress,
         address _initialOwner
-    ) Ownable(_initialOwner) {
+    ) {
         require(_entropyAddress != address(0), "Invalid Entropy address");
+        require(_initialOwner != address(0), "Invalid owner address");
         entropyAddress = _entropyAddress;
+        _transferOwnership(_initialOwner);
     }
     
     /**

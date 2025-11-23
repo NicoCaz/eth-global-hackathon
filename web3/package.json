@@ -6,8 +6,8 @@
   "scripts": {
     "compile": "hardhat compile --show-stack-traces",
     "test": "hardhat test",
-    "deploy:baseSepolia": "hardhat ignition deploy scripts/deploy.ts --network baseSepolia",
-    "deploy:local": "hardhat ignition deploy scripts/deploy.ts --network hardhat",
+    "deploy:baseSepolia": "hardhat ignition deploy ignition/modules/RaffleFactoryModule.ts --network baseSepolia",
+    "deploy:local": "hardhat ignition deploy ignition/modules/RaffleFactoryModule.ts --network hardhat --show-stack-traces",
     "interact": "hardhat run scripts/interact.ts",
     "node": "hardhat node"
   },
