@@ -358,6 +358,42 @@ async function waitForDrawExecution(
 }
 
 /**
+ * Validates that the raffle can be closed
+ * @param client Raffle client
+ * @throws Error with descriptive message if raffle cannot be closed
+ */
+export async function validateCanCloseRaffle(client: RaffleClient) {
+  const [state, totalTickets, participantsCount, timeRemaining, isActiveStatus] = await Promise.all([
+    client.raffle.state(),
+    client.raffle.totalTickets(),
+    client.raffle.getParticipantsCount(),
+    client.raffle.getTimeRemaining(),
+    client.raffle.isActive(),
+  ]);
+
+  // State 0 = Active, 1 = EntropyRequested, 2 = DrawExecuted
+  if (state !== 0) {
+    throw new Error(
+      `Raffle is not active. Current state: ${state === 1 ? "EntropyRequested" : "DrawExecuted"}`
+    );
+  }
+
+  if (totalTickets === 0n) {
+    throw new Error("Cannot close raffle: No tickets have been sold");
+  }
+
+  if (participantsCount === 0n) {
+    throw new Error("Cannot close raffle: No participants");
+  }
+
+  if (isActiveStatus) {
+    throw new Error(
+      `Raffle is still active. Time remaining: ${timeRemaining} seconds. Please wait for the raffle to end.`
+    );
+  }
+}
+
+/**
  * Closes the raffle, requests entropy, waits for draw execution, and distributes funds
  * @param client Raffle client
  * @param options Optional parameters
@@ -367,6 +403,7 @@ async function waitForDrawExecution(
  * @param options.maxWaitTime Maximum time to wait for draw execution in milliseconds (default: 5 minutes)
  * @param options.pollInterval Polling interval in milliseconds (default: 2 seconds)
  * @param options.autoDistribute Whether to automatically distribute funds after draw (default: true)
+ * @param options.skipValidation Whether to skip pre-validation (default: false)
  * @returns Object with transaction receipts and winner information
  */
 export async function closeRaffleAndDistribute(
@@ -378,6 +415,7 @@ export async function closeRaffleAndDistribute(
     maxWaitTime?: number;
     pollInterval?: number;
     autoDistribute?: boolean;
+    skipValidation?: boolean;
   } = {}
 ) {
   if (!client.signer) {
@@ -391,7 +429,13 @@ export async function closeRaffleAndDistribute(
     maxWaitTime = 5 * 60 * 1000,
     pollInterval = 2000,
     autoDistribute = true,
+    skipValidation = false,
   } = options;
+
+  // Validate raffle can be closed (unless skipped)
+  if (!skipValidation) {
+    await validateCanCloseRaffle(client);
+  }
 
   // Generate random number if not provided
   const randomCommitment =
@@ -407,31 +451,165 @@ export async function closeRaffleAndDistribute(
     }
   }
 
-  // Step 1: Request entropy (closes the raffle)
-  const requestTx = await requestEntropy(
-    client,
-    randomCommitment,
-    undefined,
-    fee
-  );
-
-  // Step 2: Wait for Pyth callback to execute the draw
-  await waitForDrawExecution(client, maxWaitTime, pollInterval);
-
-  // Get winner information
-  const winner = await getWinner(client);
-
-  let distributeTx = null;
-  if (autoDistribute) {
-    // Step 3: Distribute funds
-    distributeTx = await distributeFunds(client);
+  // Ensure fee is defined
+  if (!fee) {
+    throw new Error("Failed to get entropy fee. Please provide feeInEther or feeInWei.");
   }
 
-  return {
-    requestTxReceipt: requestTx,
-    distributeTxReceipt: distributeTx,
-    winner,
-    randomCommitment,
-  };
+  // Ensure fee is a BigInt for comparison
+  const feeBigInt = typeof fee === "bigint" ? fee : BigInt(fee.toString());
+
+  // Check signer balance
+  const signerAddress = await client.signer.getAddress();
+  const balance = await client.provider.getBalance(signerAddress);
+  if (balance < feeBigInt) {
+    throw new Error(
+      `Insufficient balance. Required: ${feeBigInt.toString()} wei, Available: ${balance.toString()} wei`
+    );
+  }
+
+  try {
+    // Step 1: Request entropy (closes the raffle)
+    const requestTx = await requestEntropy(
+      client,
+      randomCommitment,
+      undefined,
+      fee
+    );
+
+    // Step 2: Wait for Pyth callback to execute the draw
+    await waitForDrawExecution(client, maxWaitTime, pollInterval);
+
+    // Get winner information
+    const winner = await getWinner(client);
+
+    let distributeTx = null;
+    if (autoDistribute) {
+      // Step 3: Distribute funds
+      distributeTx = await distributeFunds(client);
+    }
+
+    return {
+      requestTxReceipt: requestTx,
+      distributeTxReceipt: distributeTx,
+      winner,
+      randomCommitment,
+    };
+  } catch (error: any) {
+    // Provide more helpful error messages
+    if (error?.message?.includes("unable to estimate gas") || error?.message?.includes("execution reverted")) {
+      // Try to get more details about why it failed
+      try {
+        await validateCanCloseRaffle(client);
+      } catch (validationError: any) {
+        throw new Error(
+          `Transaction failed: ${validationError.message}. Original error: ${error.message}`
+        );
+      }
+      throw new Error(
+        `Transaction failed: Unable to estimate gas. This usually means the transaction would revert. Please verify: 1) Raffle has ended, 2) There are tickets sold, 3) You are the owner or platform admin. Original error: ${error.message}`
+      );
+    }
+    throw error;
+  }
+}
+
+/**
+ * Closes the raffle and requests entropy (without distributing funds)
+ * This is useful if you want to close the raffle and distribute funds separately
+ * @param client Raffle client
+ * @param options Optional parameters
+ * @param options.userRandomNumber Optional random number commitment (if not provided, one will be generated)
+ * @param options.feeInEther Optional fee in ether (if not provided, will be fetched automatically)
+ * @param options.feeInWei Optional fee in wei (takes precedence over feeInEther)
+ * @param options.skipValidation Whether to skip pre-validation (default: false)
+ * @returns Object with transaction receipt and random commitment
+ */
+export async function closeRaffle(
+  client: RaffleClient,
+  options: {
+    userRandomNumber?: string;
+    feeInEther?: string;
+    feeInWei?: BigNumberish;
+    skipValidation?: boolean;
+  } = {}
+) {
+  if (!client.signer) {
+    throw new Error("Raffle client requires a signer to close raffle");
+  }
+
+  const {
+    userRandomNumber,
+    feeInEther,
+    feeInWei,
+    skipValidation = false,
+  } = options;
+
+  // Validate raffle can be closed (unless skipped)
+  if (!skipValidation) {
+    await validateCanCloseRaffle(client);
+  }
+
+  // Generate random number if not provided
+  const randomCommitment =
+    userRandomNumber ?? hexlify(randomBytes(32));
+
+  // Get fee if not provided
+  let fee: BigNumberish | undefined = feeInWei;
+  if (!fee) {
+    if (feeInEther !== undefined) {
+      fee = parseEther(feeInEther);
+    } else {
+      fee = await getEntropyFee(client);
+    }
+  }
+
+  // Ensure fee is defined
+  if (!fee) {
+    throw new Error("Failed to get entropy fee. Please provide feeInEther or feeInWei.");
+  }
+
+  // Ensure fee is a BigInt for comparison
+  const feeBigInt = typeof fee === "bigint" ? fee : BigInt(fee.toString());
+
+  // Check signer balance
+  const signerAddress = await client.signer.getAddress();
+  const balance = await client.provider.getBalance(signerAddress);
+  if (balance < feeBigInt) {
+    throw new Error(
+      `Insufficient balance. Required: ${feeBigInt.toString()} wei, Available: ${balance.toString()} wei`
+    );
+  }
+
+  try {
+    // Request entropy (closes the raffle)
+    const requestTx = await requestEntropy(
+      client,
+      randomCommitment,
+      undefined,
+      fee
+    );
+
+    return {
+      requestTxReceipt: requestTx,
+      randomCommitment,
+    };
+  } catch (error: any) {
+    // Provide more helpful error messages
+    if (error?.message?.includes("unable to estimate gas") || error?.message?.includes("execution reverted")) {
+      // Try to get more details about why it failed
+      try {
+        await validateCanCloseRaffle(client);
+      } catch (validationError: any) {
+        throw new Error(
+          `Transaction failed: ${validationError.message}. Original error: ${error.message}`
+        );
+      }
+      throw new Error(
+        `Transaction failed: Unable to estimate gas. This usually means the transaction would revert. Please verify: 1) Raffle has ended, 2) There are tickets sold, 3) You are the owner or platform admin. Original error: ${error.message}`
+      );
+    }
+    throw error;
+  }
 }
 
