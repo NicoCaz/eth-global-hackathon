@@ -45,7 +45,7 @@ export const fundWallet = createServerFn({ method: "POST" })
       let balance = await wallet.getBalance(Coinbase.assets.Eth);
       console.log(`Server wallet balance: ${balance.toString()} ETH`);
       
-      const AMOUNT_TO_SEND = 0.0003;
+      const AMOUNT_TO_SEND = 0.0001;
 
       if (balance.toNumber() < AMOUNT_TO_SEND) {
         console.log("Server wallet low, requesting faucet funds...");
@@ -61,7 +61,9 @@ export const fundWallet = createServerFn({ method: "POST" })
              if (balance.toNumber() >= AMOUNT_TO_SEND) break;
            } catch (err) {
              console.error("Faucet request failed:", err);
-             break; // Stop if faucet rejects us (rate limited)
+             // wait 1 second before trying again
+             await new Promise(resolve => setTimeout(resolve, 1000));
+             continue;
            }
         }
       }

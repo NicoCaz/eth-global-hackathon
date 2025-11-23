@@ -7,6 +7,7 @@ import { createPublicClient, http, formatEther } from "viem";
 import { baseSepolia } from "viem/chains";
 import { IconCheck, IconCopy, IconUser } from "./Icons";
 import { Button } from "../ui/button";
+import { CDP_CONFIG } from "@/config/cdp";
 
 const client = createPublicClient({
   chain: baseSepolia,
@@ -76,6 +77,14 @@ export default function AuthHeader() {
         {evmAddress ? (
           <>
             <div className="flex items-center gap-2">
+              <a
+                href={`https://portal.cdp.coinbase.com/products/faucet?addresses=${evmAddress}&projectId=${CDP_CONFIG.projectId}&token=ETH&network=base-sepolia`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors mr-2 underline"
+              >
+                Fund Wallet
+              </a>
               <span className="hidden sm:inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
                 Sepolia
               </span>
