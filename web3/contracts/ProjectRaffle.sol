@@ -142,7 +142,7 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
      */
     function requestEntropy(bytes32 userRandomNumber) external payable onlyOwnerOrAdmin {
         require(state == RaffleState.Active, "Raffle not active");
-        require(block.timestamp >= raffleStartTime + raffleDuration, "Raffle still active");
+        // require(block.timestamp >= raffleStartTime + raffleDuration, "Raffle still active"); // Comentado para permitir cierre anticipado
         require(totalTickets > 0, "No tickets sold");
         require(participants.length > 0, "No participants");
         
