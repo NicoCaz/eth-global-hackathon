@@ -1,4 +1,4 @@
-import { Contract, JsonRpcProvider, Signer, parseEther, BigNumberish } from "ethers";
+import { Contract, JsonRpcProvider, Signer, parseEther, BigNumberish, randomBytes, hexlify } from "ethers";
 import RaffleArtifact from "../artifacts/contracts/ProjectRaffle.sol/ProjectRaffle.json" assert { type: "json" };
 
 export type RaffleClient = {
@@ -325,6 +325,113 @@ export async function getRaffleDetails(client: RaffleClient) {
     totalBalance,
     isActive: isActiveStatus,
     timeRemaining,
+  };
+}
+
+/**
+ * Helper function to wait for the draw to be executed
+ * @param client Raffle client
+ * @param maxWaitTime Maximum time to wait in milliseconds (default: 5 minutes)
+ * @param pollInterval Polling interval in milliseconds (default: 2 seconds)
+ * @returns Promise that resolves when draw is executed
+ */
+async function waitForDrawExecution(
+  client: RaffleClient,
+  maxWaitTime: number = 5 * 60 * 1000, // 5 minutes
+  pollInterval: number = 2000 // 2 seconds
+): Promise<void> {
+  const startTime = Date.now();
+  
+  while (Date.now() - startTime < maxWaitTime) {
+    const state = await client.raffle.state();
+    // State 2 = DrawExecuted
+    if (state === 2) {
+      return;
+    }
+    // Wait before next poll
+    await new Promise((resolve) => setTimeout(resolve, pollInterval));
+  }
+  
+  throw new Error(
+    "Timeout waiting for draw execution. The entropy callback may not have been processed yet."
+  );
+}
+
+/**
+ * Closes the raffle, requests entropy, waits for draw execution, and distributes funds
+ * @param client Raffle client
+ * @param options Optional parameters
+ * @param options.userRandomNumber Optional random number commitment (if not provided, one will be generated)
+ * @param options.feeInEther Optional fee in ether (if not provided, will be fetched automatically)
+ * @param options.feeInWei Optional fee in wei (takes precedence over feeInEther)
+ * @param options.maxWaitTime Maximum time to wait for draw execution in milliseconds (default: 5 minutes)
+ * @param options.pollInterval Polling interval in milliseconds (default: 2 seconds)
+ * @param options.autoDistribute Whether to automatically distribute funds after draw (default: true)
+ * @returns Object with transaction receipts and winner information
+ */
+export async function closeRaffleAndDistribute(
+  client: RaffleClient,
+  options: {
+    userRandomNumber?: string;
+    feeInEther?: string;
+    feeInWei?: BigNumberish;
+    maxWaitTime?: number;
+    pollInterval?: number;
+    autoDistribute?: boolean;
+  } = {}
+) {
+  if (!client.signer) {
+    throw new Error("Raffle client requires a signer to close raffle");
+  }
+
+  const {
+    userRandomNumber,
+    feeInEther,
+    feeInWei,
+    maxWaitTime = 5 * 60 * 1000,
+    pollInterval = 2000,
+    autoDistribute = true,
+  } = options;
+
+  // Generate random number if not provided
+  const randomCommitment =
+    userRandomNumber ?? hexlify(randomBytes(32));
+
+  // Get fee if not provided
+  let fee: BigNumberish | undefined = feeInWei;
+  if (!fee) {
+    if (feeInEther !== undefined) {
+      fee = parseEther(feeInEther);
+    } else {
+      fee = await getEntropyFee(client);
+    }
+  }
+
+  // Step 1: Request entropy (closes the raffle)
+  const requestTx = await requestEntropy(
+    client,
+    randomCommitment,
+    undefined,
+    fee
+  );
+
+  // Step 2: Wait for Pyth callback to execute the draw
+  await waitForDrawExecution(client, maxWaitTime, pollInterval);
+
+  // Get winner information
+  const winner = await getWinner(client);
+
+  let distributeTx = null;
+  if (autoDistribute) {
+    // Step 3: Distribute funds
+    distributeTx = await distributeFunds(client);
+  }
+
+  return {
+    requestTxReceipt: requestTx,
+    distributeTxReceipt: distributeTx,
+    winner,
+    randomCommitment,
   };
 }
 
