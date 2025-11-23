@@ -1,4 +1,7 @@
 import { AuthButton } from "@coinbase/cdp-react/components/AuthButton";
+import { Button } from "@coinbase/cdp-react/components/ui/Button";
+import { ArrowLeftIcon } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 
 /**
  * The Sign In screen
@@ -10,6 +13,15 @@ function SignInScreen() {
       <p className="text-xl font-medium leading-tight m-0">Welcome!</p>
       <p>Please sign in to continue.</p>
       <AuthButton />
+     <div>
+       {/*Go back to home button*/}
+       <Link to="/">
+       <Button variant="linkSecondary">
+        <ArrowLeftIcon className="w-4 h-4" />
+        <span className="text-foreground hover:text-muted-foreground transition-colors font-medium">Go back to home</span>
+      </Button>
+      </Link>
+     </div>
     </main>
   );
 }

@@ -5,12 +5,7 @@ import { db } from '@/db'
 import { campaigns } from '@/db/schema'
 import { useAppForm } from '@/hooks/demo.form'
 import { useNavigate } from '@tanstack/react-router'
-import { CDPReactProvider } from "@coinbase/cdp-react";
-import { useIsInitialized, useIsSignedIn } from "@coinbase/cdp-hooks";
-import { CDP_CONFIG } from '@/config/cdp'
-import { theme } from '@/config/theme'
-import SignInScreen from '@/components/wallet/SignInScreen'
-import Loading from '@/components/wallet/Loading'
+import { DeployCampaignButton } from '@/components/wallet/DeployCampaignButton'
 
 // Validation Schema
 const createCampaignSchema = z.object({
@@ -22,6 +17,9 @@ const createCampaignSchema = z.object({
     message: 'End date must be in the future',
   }),
   logo: z.string().default(''),
+  contractAddress: z.string().regex(/^0x[a-fA-F0-9]{40}$/),
+  creatorWalletAddress: z.string().regex(/^0x[a-fA-F0-9]{40}$/),
+  creatorUserId: z.string().min(1),
 })
 
 // Server Function
@@ -30,16 +28,11 @@ const createCampaign = createServerFn({
 })
   .inputValidator((data: unknown) => createCampaignSchema.parse(data))
   .handler(async ({ data }) => {
-    // Mock blockchain/user data
-    const mockData = {
-      contractAddress: `0x${Math.random().toString(16).slice(2, 42).padEnd(40, '0')}`,
-      creatorUserId: 'demo-user-id',
-      creatorWalletAddress: `0x${Math.random().toString(16).slice(2, 42).padEnd(40, '0')}`,
-      status: 'active' as const,
-    }
-
     await db.insert(campaigns).values({
-      ...mockData,
+      contractAddress: data.contractAddress,
+      creatorUserId: data.creatorUserId,
+      creatorWalletAddress: data.creatorWalletAddress,
+      status: 'active',
       title: data.title,
       description: data.description,
       rafflePercentage: data.rafflePercentage,
@@ -52,40 +45,9 @@ const createCampaign = createServerFn({
     return { success: true }
   })
 
-export const Route = createFileRoute('/campaign/create')({
-  component: CreateCampaign,
+export const Route = createFileRoute('/_auth/campaign/create')({
+  component: CreateCampaignForm,
 })
-
-function CreateCampaign() {
-  return (
-    <CDPReactProvider config={CDP_CONFIG} theme={theme}>
-      <CreateCampaignContent />
-    </CDPReactProvider>
-  )
-}
-
-function CreateCampaignContent() {
-  const { isInitialized } = useIsInitialized()
-  const { isSignedIn } = useIsSignedIn()
-
-  if (!isInitialized) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loading />
-      </div>
-    )
-  }
-
-  if (!isSignedIn) {
-    return (
-      <div className="flex items-center justify-center min-h-screen p-4">
-        <SignInScreen />
-      </div>
-    )
-  }
-
-  return <CreateCampaignForm />
-}
 
 function CreateCampaignForm() {
   const navigate = useNavigate()
@@ -109,17 +71,8 @@ function CreateCampaignForm() {
       endDate: '',
       logo: '',
     },
-    onSubmit: async ({ value }) => {
-      // Convert rafflePercentage to number before submitting
-      const submitValue = {
-        ...value,
-        rafflePercentage: typeof value.rafflePercentage === 'string' 
-          ? parseInt(value.rafflePercentage) || 10 
-          : value.rafflePercentage
-      }
-      await createCampaign({ data: submitValue })
-      navigate({ to: '/' })
-    },
+    // The submit is now handled by the onCampaignDeployed callback
+    onSubmit: async () => {},
   })
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -152,7 +105,6 @@ function CreateCampaignForm() {
             onSubmit={(e) => {
               e.preventDefault()
               e.stopPropagation()
-              form.handleSubmit()
             }}
             className="space-y-6"
           >
@@ -369,10 +321,50 @@ function CreateCampaignForm() {
             </div>
 
             <div className="pt-4">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <form.AppForm>
-                  <form.SubscribeButton label="Create Campaign" />
-                </form.AppForm>
+              <div className="flex flex-col gap-6">
+                <form.Subscribe
+                  selector={(state) => ({
+                    values: state.values,
+                    canSubmit: state.canSubmit,
+                    isSubmitting: state.isSubmitting
+                  })}
+                  children={({ values, canSubmit, isSubmitting }) => (
+                    <DeployCampaignButton
+                      title={values.title}
+                      description={values.description}
+                      projectPercentage={typeof values.rafflePercentage === 'string' ? parseInt(values.rafflePercentage) || 0 : values.rafflePercentage}
+                      goalAmount={values.goalAmount}
+                      endDate={values.endDate}
+                      disabled={!canSubmit || isSubmitting}
+                      onCampaignDeployed={async (data) => {
+                        try {
+                          // Handle rafflePercentage conversion again
+                          const rafflePercentage = typeof values.rafflePercentage === 'string' 
+                            ? parseInt(values.rafflePercentage) || 10 
+                            : values.rafflePercentage
+
+                          await createCampaign({
+                            data: {
+                              ...values,
+                              rafflePercentage,
+                              contractAddress: data.contractAddress,
+                              creatorWalletAddress: data.creatorWalletAddress,
+                              creatorUserId: data.creatorUserId,
+                            }
+                          })
+                          navigate({ to: '/' })
+                        } catch (error) {
+                          console.error('Failed to save campaign:', error)
+                          // You might want to show a toast or error message here
+                        }
+                      }}
+                      onError={(error) => {
+                        console.error('Deployment error:', error)
+                        // You might want to show a toast or error message here
+                      }}
+                    />
+                  )}
+                />
                 
                 <form.Subscribe
                   selector={(state) => [state.values.rafflePercentage, state.values.goalAmount]}
