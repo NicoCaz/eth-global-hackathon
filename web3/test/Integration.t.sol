@@ -238,7 +238,7 @@ contract IntegrationTest {
     
     function test_PercentageCalculations_PlatformFee() public view {
         uint256 platformFee = raffle1.PLATFORM_FEE();
-        require(platformFee == 50, "Platform fee should be 50 basis points (0.5%)");
+        require(platformFee == 5, "Platform fee should be 5 basis points (0.05%)");
     }
     
     // ========== SCENARIO 9: Time-Based Edge Cases ==========
@@ -342,7 +342,7 @@ contract IntegrationTest {
     }
     
     function test_Constants_PlatformFee() public view {
-        require(raffle1.PLATFORM_FEE() == 50, "PLATFORM_FEE should be 50 (0.5%)");
+        require(raffle1.PLATFORM_FEE() == 5, "PLATFORM_FEE should be 5 (0.05%)");
     }
     
     function test_Constants_MinTicketPrice() public view {
