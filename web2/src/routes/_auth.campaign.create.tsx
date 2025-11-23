@@ -17,6 +17,7 @@ const createCampaignSchema = z.object({
     message: 'End date must be in the future',
   }),
   logo: z.string().default(''),
+  logoMimeType: z.string().optional(),
   contractAddress: z.string().regex(/^0x[a-fA-F0-9]{40}$/),
   creatorWalletAddress: z.string().regex(/^0x[a-fA-F0-9]{40}$/),
   creatorUserId: z.string().min(1),
@@ -38,8 +39,8 @@ const createCampaign = createServerFn({
       rafflePercentage: data.rafflePercentage,
       goalAmount: data.goalAmount,
       endDate: new Date(data.endDate),
-      logo: data.logo,
-      logoMimeType: data.logo ? 'image/jpeg' : undefined, // Simplified for demo
+      logo: data.logo || null,
+      logoMimeType: data.logoMimeType || null,
     })
 
     return { success: true }
@@ -70,6 +71,7 @@ function CreateCampaignForm() {
       goalAmount: '',
       endDate: '',
       logo: '',
+      logoMimeType: '',
     },
     // The submit is now handled by the onCampaignDeployed callback
     onSubmit: async () => {},
@@ -80,9 +82,8 @@ function CreateCampaignForm() {
     if (file) {
       const reader = new FileReader()
       reader.onloadend = () => {
-        // We would set this in the form, but since logo is optional for now, we'll skip it
-        // In a real app, you'd want to update a hidden form field
-        console.log('File loaded:', reader.result)
+        form.setFieldValue('logo', reader.result as string)
+        form.setFieldValue('logoMimeType', file.type)
       }
       reader.readAsDataURL(file)
     }
@@ -255,7 +256,7 @@ function CreateCampaignForm() {
                 }
 
                 const presets = [
-                  { label: 'In 5 minutes', minutes: 5 },
+                  { label: 'In 1 day', minutes: 24 * 60 },
                   { label: 'In 1 week', minutes: 7 * 24 * 60 },
                   { label: 'In 1 month', minutes: 30 * 24 * 60 },
                   { label: 'In 3 months', minutes: 90 * 24 * 60 },

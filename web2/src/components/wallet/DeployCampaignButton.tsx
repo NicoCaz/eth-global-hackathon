@@ -6,7 +6,7 @@ import { encodeFunctionData, createPublicClient, http, decodeEventLog } from "vi
 import { baseSepolia } from "viem/chains";
 import { CAMPAIGN_FACTORY_ADDRESS } from "@/constants/web3";
 import { RAFFLE_FACTORY_ABI } from "@/constants/abi";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
 
 interface DeployCampaignButtonProps {
   title: string;
@@ -33,7 +33,6 @@ export function DeployCampaignButton({
   description,
   projectPercentage,
   endDate,
-  disabled,
   onCampaignDeployed,
   onError,
 }: DeployCampaignButtonProps) {
@@ -41,10 +40,14 @@ export function DeployCampaignButton({
   const { currentUser } = useCurrentUser();
   const [isWaitingForReceipt, setIsWaitingForReceipt] = useState(false);
   const [txHash, setTxHash] = useState<string | null>(null);
+  const [internalError, setInternalError] = useState<string | null>(null);
 
   // Construct the transaction
   const transaction = useMemo(() => {
-    if (!title || !description || !endDate || !projectPercentage) return undefined;
+    // Reset error when inputs change
+    setInternalError(null);
+
+    if (!title || !description || !endDate || !projectPercentage || !evmAddress) return undefined;
 
     try {
       // Calculate duration in seconds
@@ -54,6 +57,17 @@ export function DeployCampaignButton({
 
       // Basis points (1% = 100)
       const percentageBasisPoints = Math.floor(projectPercentage * 100);
+
+      // Validation to prevent "unable to estimate gas" errors
+      if (durationSeconds <= 0) {
+        // Duration must be positive. We return undefined to disable the button
+        // until the user selects a valid future date.
+        return undefined;
+      }
+
+      if (percentageBasisPoints <= 0 || percentageBasisPoints > 10000) {
+        return undefined;
+      }
 
       // Encode function data
       const data = encodeFunctionData({
@@ -84,6 +98,7 @@ export function DeployCampaignButton({
   const handleSuccess = async (hash: string) => {
     setTxHash(hash);
     setIsWaitingForReceipt(true);
+    setInternalError(null);
     
     try {
       const receipt = await client.waitForTransactionReceipt({ 
@@ -122,7 +137,9 @@ export function DeployCampaignButton({
       }
     } catch (e) {
       console.error("Error waiting for receipt:", e);
-      onError?.(e instanceof Error ? e : new Error("Failed to verify transaction"));
+      const errorMessage = e instanceof Error ? e.message : "Failed to verify transaction";
+      setInternalError(errorMessage);
+      onError?.(e instanceof Error ? e : new Error(errorMessage));
     } finally {
       setIsWaitingForReceipt(false);
       setTxHash(null);
@@ -131,33 +148,33 @@ export function DeployCampaignButton({
 
   const handleError = (error: Error | { message: string }) => {
     console.error("Transaction error:", error);
-    onError?.(error instanceof Error ? error : new Error(error.message));
+    const errorMessage = error.message || "Transaction failed";
+    setInternalError(errorMessage);
+    onError?.(error instanceof Error ? error : new Error(errorMessage));
     setIsWaitingForReceipt(false);
     setTxHash(null);
   };
 
   if (isWaitingForReceipt) {
     return (
-      <div className="flex flex-col items-center justify-center p-4 space-y-2 bg-secondary/50 rounded-lg animate-in fade-in">
-        <div className="flex items-center space-x-2">
-          <Loader2 className="h-5 w-5 animate-spin text-primary" />
-          <span className="font-medium">Deploying to Base Sepolia...</span>
+      <div className="w-full space-y-4">
+        <Button disabled className="w-full" variant="secondary">
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          Deploying to Base Sepolia...
+        </Button>
+        <div className="text-sm text-center text-muted-foreground">
+          <p>Please wait while we confirm your transaction.</p>
+          {txHash && (
+            <a
+              href={`https://sepolia.basescan.org/tx/${txHash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              View on Block Explorer
+            </a>
+          )}
         </div>
-        <p className="text-sm text-muted-foreground text-center">
-          Please wait while we confirm your transaction on the blockchain.
-          <br />
-          This usually takes 10-20 seconds.
-        </p>
-        {txHash && (
-          <a
-            href={`https://sepolia.basescan.org/tx/${txHash}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-primary hover:underline"
-          >
-            View on Explorer
-          </a>
-        )}
       </div>
     );
   }
@@ -170,28 +187,35 @@ export function DeployCampaignButton({
     );
   }
 
-  if (!transaction) {
-    return (
-      <Button disabled className="w-full">
-        Fill form to Create Campaign
-      </Button>
-    );
-  }
-
   return (
-    <div className="w-full">
-       {/* @ts-ignore - types mismatch between cdp-react and local prop types */}
-      <SendEvmTransactionButton
-        className="w-full"
-        account={evmAddress}
-        network="base-sepolia"
-        transaction={transaction}
-        onSuccess={handleSuccess}
-        onError={handleError}
-      >
-        <span className="w-full">Create Campaign (On-Chain)</span>
-      </SendEvmTransactionButton>
+    <div className="w-full space-y-4">
+      {internalError && (
+        <div className="bg-destructive/15 text-destructive px-4 py-3 rounded-lg flex items-start gap-3 text-sm">
+          <AlertCircle className="h-5 w-5 shrink-0" />
+          <div className="flex-1">
+            <h5 className="font-medium mb-1">Deployment Error</h5>
+            <p>{internalError}</p>
+          </div>
+        </div>
+      )}
+
+      {!transaction ? (
+        <Button disabled className="w-full">
+          {(!title || !description || !endDate) ? "Fill form to Create Campaign" : "Invalid Campaign Settings"}
+        </Button>
+      ) : (
+        // @ts-ignore - types mismatch between cdp-react and local prop types
+        <SendEvmTransactionButton
+          className="w-full"
+          account={evmAddress}
+          network="base-sepolia"
+          transaction={transaction}
+          onSuccess={handleSuccess}
+          onError={handleError}
+        >
+          <span className="w-full">Create Campaign (On-Chain)</span>
+        </SendEvmTransactionButton>
+      )}
     </div>
   );
 }
-
