@@ -225,6 +225,21 @@ function CampaignDetail() {
             
             {/* Funding Card */}
             <div className="bg-card border border-border rounded-lg p-6 shadow-sm sticky top-6">
+              
+              {/* Prize Pot Highlight */}
+              <div className="mb-6 p-4 bg-secondary/10 border border-secondary/20 rounded-lg flex flex-col items-center text-center">
+                 <div className="text-sm font-medium text-amber-500 uppercase tracking-wider mb-1 flex items-center justify-center gap-1.5">
+                   <Trophy className="w-4 h-4" />
+                   Win Potential
+                 </div>
+                 <div className="text-3xl font-bold text-foreground tabular-nums">
+                   {rafflePot.toFixed(4)} <span className="text-lg font-normal text-muted-foreground">ETH</span>
+                 </div>
+                 <div className="text-xs text-muted-foreground mt-1">
+                   Current Prize Pot
+                 </div>
+              </div>
+
               <div className="mb-6">
                 <div className="flex items-end gap-2 mb-2">
                   <span className="text-3xl font-bold">{totalRaised.toFixed(4)}</span>
@@ -243,14 +258,10 @@ function CampaignDetail() {
                   <p className="text-sm text-muted-foreground mb-4">Total raised so far</p>
                 )}
 
-                <div className="grid grid-cols-2 gap-4 py-4 border-t border-border">
+                <div className="grid grid-cols-1 gap-4 py-4 border-t border-border text-center">
                   <div>
                     <div className="text-2xl font-bold">{campaign.donationCount}</div>
                     <div className="text-xs text-muted-foreground uppercase tracking-wide">Donors</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold">{rafflePot.toFixed(4)}</div>
-                    <div className="text-xs text-muted-foreground uppercase tracking-wide">ETH In Pot</div>
                   </div>
                 </div>
               </div>

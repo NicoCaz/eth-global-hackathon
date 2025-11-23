@@ -2,7 +2,7 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 import { db } from '@/db'
 import { campaigns } from '@/db/schema'
-import { asc } from 'drizzle-orm'
+import { asc, desc } from 'drizzle-orm'
 import { CampaignCard } from '@/components/CampaignCard'
 import { ArrowRight, Plus, Sparkles, Trophy, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -11,7 +11,7 @@ const getCampaigns = createServerFn({
   method: 'GET',
 }).handler(async () => {
   return await db.query.campaigns.findMany({
-    orderBy: [asc(campaigns.endDate)],
+    orderBy: [asc(campaigns.status), desc(campaigns.rafflePot), asc(campaigns.endDate)],
   })
 })
 
