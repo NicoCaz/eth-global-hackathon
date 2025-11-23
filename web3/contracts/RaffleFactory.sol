@@ -13,7 +13,6 @@ contract RaffleFactory is Ownable {
     // Array de todas las rifas creadas
     ProjectRaffle[] public raffles;
     
-    uint256 public constant PLATFORM_FEE = 50; // 0.5% en basis points
     
     // Mapping para verificar si una dirección es una rifa creada por este factory
     mapping(address => bool) public isRaffle;
@@ -62,8 +61,7 @@ contract RaffleFactory is Ownable {
         uint256 raffleDuration
     ) external returns (address) {
         require(bytes(name).length > 0, "Name cannot be empty");
-        // Validar que projectPercentage + PLATFORM_FEE < 10000 (basis points)
-        require(projectPercentage + PLATFORM_FEE < 10000, "Percentages too high");
+        require(projectPercentage <= 10000, "Project percentage cannot exceed 100%");
         require(projectPercentage > 0, "Project percentage must be > 0");
         require(projectAddress != address(0), "Invalid project address");
         require(raffleDuration > 0, "Duration must be > 0");
