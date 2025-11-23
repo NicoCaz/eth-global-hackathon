@@ -29,6 +29,18 @@ The platform consists of two main components:
 
 ---
 
+## Origin & Motivation
+
+**Tanty.app** was born from a real-world problem we encountered while building a web platform for real estate agencies (propimap.com). Together with Martín, we developed a solution to help real estate agencies adopt digital technologies and modernize their operations. However, we faced a critical challenge: **securing adequate funding and marketing resources** to bring our vision to life.
+
+Traditional funding sources proved difficult to access, and we realized that many other entrepreneurs and project creators face similar obstacles when trying to launch innovative ideas. This experience inspired us to create **Tanty.app** - a platform that makes fundraising more accessible and engaging through prize draws.
+
+The core idea behind Tanty.app is to **democratize access to funding** by combining crowdfunding with gamified prize mechanisms. Instead of relying solely on traditional investment channels, project creators can now raise capital while offering backers the chance to win prizes, creating a win-win scenario that incentivizes participation and makes fundraising more achievable for everyone.
+
+This platform represents our solution to the funding gap we experienced firsthand, providing a decentralized, transparent, and fair way for projects to secure the resources they need to succeed.
+
+---
+
 ## Architecture
 
 ### Smart Contracts (`web3/contracts/`)
