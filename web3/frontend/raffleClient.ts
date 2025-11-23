@@ -86,3 +86,32 @@ export async function getRaffleSummary(client: RaffleClient) {
   };
 }
 
+/**
+ * Withdraws pending payments for a beneficiary (winner, project, or platform)
+ * @param client Raffle client
+ * @param beneficiary Address of the beneficiary (must be the signer or they won't be able to withdraw)
+ */
+export async function withdrawPayments(
+  client: RaffleClient,
+  beneficiary: string
+) {
+  if (!client.signer) {
+    throw new Error("Raffle client requires a signer to withdraw payments");
+  }
+  const tx = await client.raffle.withdrawPayments(beneficiary);
+  return tx.wait();
+}
+
+/**
+ * Gets the withdrawable amount for a beneficiary
+ * @param client Raffle client
+ * @param beneficiary Address of the beneficiary
+ * @returns Amount in wei that can be withdrawn
+ */
+export async function getWithdrawableAmount(
+  client: RaffleClient,
+  beneficiary: string
+) {
+  return client.raffle.withdrawablePayments(beneficiary);
+}
+
