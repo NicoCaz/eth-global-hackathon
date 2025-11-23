@@ -2,6 +2,7 @@ import { useEvmAddress, useIsSignedIn } from "@coinbase/cdp-hooks";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPublicClient, http, formatEther } from "viem";
 import { baseSepolia } from "viem/chains";
+import { Link } from '@tanstack/react-router';
 
 import EOATransaction from "./EOATransaction";
 import WalletHeader from "./WalletHeader";
@@ -55,6 +56,14 @@ function SignedInScreen() {
               <EOATransaction balance={formattedBalance} onSuccess={getBalance} />
             )}
           </div>
+          <Link
+            to="/profile"
+            className="bg-card border border-border rounded-2xl p-6 flex items-center justify-center max-w-[30rem] text-center w-full hover:bg-muted/50 transition-colors group"
+          >
+            <span className="text-lg font-medium group-hover:text-primary transition-colors">
+              View Profile →
+            </span>
+          </Link>
         </div>
       </main>
     </>

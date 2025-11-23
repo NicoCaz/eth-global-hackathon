@@ -1,0 +1,6 @@
+<svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="200" fill="#06B6D4"/>
+  <path d="M 100 40 L 160 100 L 100 160 L 40 100 Z" fill="#22D3EE"/>
+  <text x="100" y="115" font-family="Arial, sans-serif" font-size="48" fill="white" text-anchor="middle" font-weight="bold">L6</text>
+</svg>
+
