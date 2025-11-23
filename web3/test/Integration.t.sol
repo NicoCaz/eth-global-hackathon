@@ -120,10 +120,9 @@ contract IntegrationTest {
     // ========== SCENARIO 3: Edge Cases - Maximum Values ==========
     
     function test_EdgeCase_MaximumProjectPercentage() public {
-        // Maximum percentage (99.45% to leave room for platform fee)
-        // 9950 + 50 = 10000, which equals BASIS_POINTS, so it's rejected
-        // Maximum is 9949 (99.49%)
-        uint256 maxPercentage = 9949; // 99.49%
+        // Maximum percentage is now 100% (10000 basis points)
+        // This means project gets 100% of the distributable pool (after platform fee)
+        uint256 maxPercentage = 10000; // 100%
         address maxRaffle = factory.createRaffle(
             "Max Project",
             "Maximum percentage test",
@@ -132,16 +131,16 @@ contract IntegrationTest {
             RAFFLE_DURATION
         );
         ProjectRaffle raffle = ProjectRaffle(maxRaffle);
-        require(raffle.projectPercentage() == maxPercentage, "Should accept maximum percentage");
+        require(raffle.projectPercentage() == maxPercentage, "Should accept 100% percentage");
     }
     
     function test_EdgeCase_MaximumPercentage_Rejects() public {
-        // Try to create raffle with percentage that would exceed 100% with platform fee
+        // Try to create raffle with percentage that exceeds 100%
         bool reverted = false;
         try factory.createRaffle(
             "Invalid",
             "Should fail",
-            10000, // 100% - would exceed with platform fee
+            10001, // 100.01% - exceeds 100%
             project1,
             RAFFLE_DURATION
         ) {
@@ -149,7 +148,7 @@ contract IntegrationTest {
         } catch {
             reverted = true;
         }
-        require(reverted == true, "Should reject percentage that exceeds 100% with platform fee");
+        require(reverted == true, "Should reject percentage that exceeds 100%");
     }
     
     // ========== SCENARIO 4: State Transitions ==========
@@ -306,17 +305,17 @@ contract IntegrationTest {
         require(r.projectPercentage() == 1, "Should accept 1 basis point");
     }
     
-    function test_BoundaryConditions_9949BasisPoints() public {
-        // 9949 is the maximum (9949 + 50 platform fee = 9999 < 10000)
+    function test_BoundaryConditions_10000BasisPoints() public {
+        // 10000 is the maximum (100% of distributable pool)
         address raffle = factory.createRaffle(
             "Boundary",
             "Test",
-            9949, // 99.49% (max allowed)
+            10000, // 100% (max allowed)
             project1,
             RAFFLE_DURATION
         );
         ProjectRaffle r = ProjectRaffle(raffle);
-        require(r.projectPercentage() == 9949, "Should accept 9949 basis points");
+        require(r.projectPercentage() == 10000, "Should accept 10000 basis points (100%)");
     }
     
     // ========== SCENARIO 13: Multiple Raffles Independence ==========

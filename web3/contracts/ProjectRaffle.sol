@@ -19,7 +19,7 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
     string public projectDescription;
     uint256 public projectPercentage; // Porcentaje para el proyecto (Basis Points: 100 = 1%)
     uint256 public constant BASIS_POINTS = 10000;
-    uint256 public constant PLATFORM_FEE = 50; // 0.5% (50/10000)
+    uint256 public constant PLATFORM_FEE = 5; // 0.05% (5/10000)
     uint256 public constant MIN_TICKET_PRICE = 0.0001 ether;
     
     // Estado de la rifa
@@ -85,7 +85,7 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
         uint256 _raffleDuration
     ) {
         require(_projectPercentage > 0, "Project percentage must be > 0");
-        require(_projectPercentage + PLATFORM_FEE < BASIS_POINTS, "Percentages too high");
+        require(_projectPercentage <= BASIS_POINTS, "Project percentage cannot exceed 100%");
         require(_entropyAddress != address(0), "Invalid Entropy address");
         require(_projectAddress != address(0), "Invalid project address");
         require(_platformAdmin != address(0), "Invalid admin address");
@@ -134,11 +134,6 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
         require(msg.sender == owner() || msg.sender == platformAdmin, "Not authorized");
         _;
     }
-    
-    /**
-     * @notice Funcion obsoleta eliminada. El sorteo es incremental.
-     */
-    // function closeSalesAndBuildCumulative() external... ELIMINADA
     
     /**
      * @notice Solicita entropía a Pyth para ejecutar el sorteo
@@ -219,7 +214,7 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
         uint256 totalBalance = address(this).balance;
         
         // Calcular distribución (Base 10000)
-        // Fee de plataforma fijo: 0.5%
+        // Fee de plataforma fijo: 0.05%
         uint256 platformAmount = (totalBalance * PLATFORM_FEE) / BASIS_POINTS;
         
         // El resto del pozo se divide entre proyecto y ganador
