@@ -141,6 +141,12 @@ pnpm dev
 
 See `web2/CDP_INTEGRATION.md` for detailed integration guide.
 
+#### Developer Feedback
+
+**Positive Experience**: The CDP integration was straightforward and well-documented. The embedded wallet setup was seamless, and the authentication flow worked smoothly with minimal configuration.
+
+**Suggestion for Improvement**: While the React SDK (`@coinbase/cdp-react`) works excellently for React-based applications, it would be beneficial to have a **TypeScript-only SDK** to enable integration with other frontend frameworks such as Svelte. This would make CDP more accessible to a broader range of developers and frameworks.
+
 ---
 
 ### 3. Pyth Network (`web3/`)
