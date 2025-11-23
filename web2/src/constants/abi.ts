@@ -71,3 +71,37 @@ export const RAFFLE_FACTORY_ABI = [
   }
 ] as const;
 
+export const PROJECT_RAFFLE_ABI = [
+  {
+    "inputs": [],
+    "name": "buyTickets",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "buyer",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "ticketCount",
+        "type": "uint256"
+      }
+    ],
+    "name": "TicketPurchased",
+    "type": "event"
+  }
+] as const;

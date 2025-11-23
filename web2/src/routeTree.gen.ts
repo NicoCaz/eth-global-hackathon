@@ -17,6 +17,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as DemoTanstackQueryRouteImport } from './routes/demo/tanstack-query'
 import { Route as DemoStoreRouteImport } from './routes/demo/store'
 import { Route as DemoDrizzleRouteImport } from './routes/demo/drizzle'
+import { Route as CampaignCampaignIdRouteImport } from './routes/campaign.$campaignId'
 import { Route as DemoStartServerFuncsRouteImport } from './routes/demo/start.server-funcs'
 import { Route as DemoStartApiRequestRouteImport } from './routes/demo/start.api-request'
 import { Route as DemoFormSimpleRouteImport } from './routes/demo/form.simple'
@@ -28,6 +29,7 @@ import { Route as DemoStartSsrIndexRouteImport } from './routes/demo/start.ssr.i
 import { Route as DemoStartSsrSpaModeRouteImport } from './routes/demo/start.ssr.spa-mode'
 import { Route as DemoStartSsrFullSsrRouteImport } from './routes/demo/start.ssr.full-ssr'
 import { Route as DemoStartSsrDataOnlyRouteImport } from './routes/demo/start.ssr.data-only'
+import { Route as AuthCampaignCampaignIdDonateRouteImport } from './routes/_auth.campaign.$campaignId.donate'
 
 const WalletRoute = WalletRouteImport.update({
   id: '/wallet',
@@ -66,6 +68,11 @@ const DemoStoreRoute = DemoStoreRouteImport.update({
 const DemoDrizzleRoute = DemoDrizzleRouteImport.update({
   id: '/demo/drizzle',
   path: '/demo/drizzle',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CampaignCampaignIdRoute = CampaignCampaignIdRouteImport.update({
+  id: '/campaign/$campaignId',
+  path: '/campaign/$campaignId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DemoStartServerFuncsRoute = DemoStartServerFuncsRouteImport.update({
@@ -123,12 +130,19 @@ const DemoStartSsrDataOnlyRoute = DemoStartSsrDataOnlyRouteImport.update({
   path: '/demo/start/ssr/data-only',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthCampaignCampaignIdDonateRoute =
+  AuthCampaignCampaignIdDonateRouteImport.update({
+    id: '/campaign/$campaignId/donate',
+    path: '/campaign/$campaignId/donate',
+    getParentRoute: () => AuthRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/profile': typeof ProfileRoute
   '/test-factory': typeof TestFactoryRoute
   '/wallet': typeof WalletRoute
+  '/campaign/$campaignId': typeof CampaignCampaignIdRoute
   '/demo/drizzle': typeof DemoDrizzleRoute
   '/demo/store': typeof DemoStoreRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
@@ -139,6 +153,7 @@ export interface FileRoutesByFullPath {
   '/demo/form/simple': typeof DemoFormSimpleRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
   '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
+  '/campaign/$campaignId/donate': typeof AuthCampaignCampaignIdDonateRoute
   '/demo/start/ssr/data-only': typeof DemoStartSsrDataOnlyRoute
   '/demo/start/ssr/full-ssr': typeof DemoStartSsrFullSsrRoute
   '/demo/start/ssr/spa-mode': typeof DemoStartSsrSpaModeRoute
@@ -149,6 +164,7 @@ export interface FileRoutesByTo {
   '/profile': typeof ProfileRoute
   '/test-factory': typeof TestFactoryRoute
   '/wallet': typeof WalletRoute
+  '/campaign/$campaignId': typeof CampaignCampaignIdRoute
   '/demo/drizzle': typeof DemoDrizzleRoute
   '/demo/store': typeof DemoStoreRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
@@ -159,6 +175,7 @@ export interface FileRoutesByTo {
   '/demo/form/simple': typeof DemoFormSimpleRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
   '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
+  '/campaign/$campaignId/donate': typeof AuthCampaignCampaignIdDonateRoute
   '/demo/start/ssr/data-only': typeof DemoStartSsrDataOnlyRoute
   '/demo/start/ssr/full-ssr': typeof DemoStartSsrFullSsrRoute
   '/demo/start/ssr/spa-mode': typeof DemoStartSsrSpaModeRoute
@@ -171,6 +188,7 @@ export interface FileRoutesById {
   '/profile': typeof ProfileRoute
   '/test-factory': typeof TestFactoryRoute
   '/wallet': typeof WalletRoute
+  '/campaign/$campaignId': typeof CampaignCampaignIdRoute
   '/demo/drizzle': typeof DemoDrizzleRoute
   '/demo/store': typeof DemoStoreRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
@@ -181,6 +199,7 @@ export interface FileRoutesById {
   '/demo/form/simple': typeof DemoFormSimpleRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
   '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
+  '/_auth/campaign/$campaignId/donate': typeof AuthCampaignCampaignIdDonateRoute
   '/demo/start/ssr/data-only': typeof DemoStartSsrDataOnlyRoute
   '/demo/start/ssr/full-ssr': typeof DemoStartSsrFullSsrRoute
   '/demo/start/ssr/spa-mode': typeof DemoStartSsrSpaModeRoute
@@ -193,6 +212,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/test-factory'
     | '/wallet'
+    | '/campaign/$campaignId'
     | '/demo/drizzle'
     | '/demo/store'
     | '/demo/tanstack-query'
@@ -203,6 +223,7 @@ export interface FileRouteTypes {
     | '/demo/form/simple'
     | '/demo/start/api-request'
     | '/demo/start/server-funcs'
+    | '/campaign/$campaignId/donate'
     | '/demo/start/ssr/data-only'
     | '/demo/start/ssr/full-ssr'
     | '/demo/start/ssr/spa-mode'
@@ -213,6 +234,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/test-factory'
     | '/wallet'
+    | '/campaign/$campaignId'
     | '/demo/drizzle'
     | '/demo/store'
     | '/demo/tanstack-query'
@@ -223,6 +245,7 @@ export interface FileRouteTypes {
     | '/demo/form/simple'
     | '/demo/start/api-request'
     | '/demo/start/server-funcs'
+    | '/campaign/$campaignId/donate'
     | '/demo/start/ssr/data-only'
     | '/demo/start/ssr/full-ssr'
     | '/demo/start/ssr/spa-mode'
@@ -234,6 +257,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/test-factory'
     | '/wallet'
+    | '/campaign/$campaignId'
     | '/demo/drizzle'
     | '/demo/store'
     | '/demo/tanstack-query'
@@ -244,6 +268,7 @@ export interface FileRouteTypes {
     | '/demo/form/simple'
     | '/demo/start/api-request'
     | '/demo/start/server-funcs'
+    | '/_auth/campaign/$campaignId/donate'
     | '/demo/start/ssr/data-only'
     | '/demo/start/ssr/full-ssr'
     | '/demo/start/ssr/spa-mode'
@@ -256,6 +281,7 @@ export interface RootRouteChildren {
   ProfileRoute: typeof ProfileRoute
   TestFactoryRoute: typeof TestFactoryRoute
   WalletRoute: typeof WalletRoute
+  CampaignCampaignIdRoute: typeof CampaignCampaignIdRoute
   DemoDrizzleRoute: typeof DemoDrizzleRoute
   DemoStoreRoute: typeof DemoStoreRoute
   DemoTanstackQueryRoute: typeof DemoTanstackQueryRoute
@@ -327,6 +353,13 @@ declare module '@tanstack/react-router' {
       path: '/demo/drizzle'
       fullPath: '/demo/drizzle'
       preLoaderRoute: typeof DemoDrizzleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/campaign/$campaignId': {
+      id: '/campaign/$campaignId'
+      path: '/campaign/$campaignId'
+      fullPath: '/campaign/$campaignId'
+      preLoaderRoute: typeof CampaignCampaignIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/demo/start/server-funcs': {
@@ -406,15 +439,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DemoStartSsrDataOnlyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_auth/campaign/$campaignId/donate': {
+      id: '/_auth/campaign/$campaignId/donate'
+      path: '/campaign/$campaignId/donate'
+      fullPath: '/campaign/$campaignId/donate'
+      preLoaderRoute: typeof AuthCampaignCampaignIdDonateRouteImport
+      parentRoute: typeof AuthRoute
+    }
   }
 }
 
 interface AuthRouteChildren {
   AuthCampaignCreateRoute: typeof AuthCampaignCreateRoute
+  AuthCampaignCampaignIdDonateRoute: typeof AuthCampaignCampaignIdDonateRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
   AuthCampaignCreateRoute: AuthCampaignCreateRoute,
+  AuthCampaignCampaignIdDonateRoute: AuthCampaignCampaignIdDonateRoute,
 }
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
@@ -425,6 +467,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileRoute: ProfileRoute,
   TestFactoryRoute: TestFactoryRoute,
   WalletRoute: WalletRoute,
+  CampaignCampaignIdRoute: CampaignCampaignIdRoute,
   DemoDrizzleRoute: DemoDrizzleRoute,
   DemoStoreRoute: DemoStoreRoute,
   DemoTanstackQueryRoute: DemoTanstackQueryRoute,

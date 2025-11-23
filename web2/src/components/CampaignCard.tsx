@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from '@tanstack/react-router'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
@@ -135,9 +136,11 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
           variant="secondary" 
           size="sm"
           className="w-full"
-          disabled={campaign.status !== 'active'}
+          asChild
         >
-          {campaign.status === 'active' ? 'Back Project' : 'View Details'}
+          <Link to="/campaign/$campaignId" params={{ campaignId: campaign.id }}>
+            {campaign.status === 'active' ? 'Back Project' : 'View Details'}
+          </Link>
         </Button>
       </div>
     </div>
