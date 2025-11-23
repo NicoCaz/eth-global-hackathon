@@ -60,38 +60,50 @@ code {
 }
 
 .dark {
-  --background: oklch(0.141 0.005 285.823);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.141 0.005 285.823);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.141 0.005 285.823);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.21 0.006 285.885);
-  --secondary: oklch(0.274 0.006 286.033);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.274 0.006 286.033);
-  --muted-foreground: oklch(0.705 0.015 286.067);
-  --accent: oklch(0.274 0.006 286.033);
-  --accent-foreground: oklch(0.985 0 0);
+  /* Notion Dark Theme Colors */
+  --background: #191919;
+  --foreground: #EBEBED;
+  
+  --card: #202020;
+  --card-foreground: #EBEBED;
+  
+  --popover: #191919;
+  --popover-foreground: #EBEBED;
+  
+  --primary: #EBEBED;
+  --primary-foreground: #191919;
+  
+  --secondary: #2F2F2F;
+  --secondary-foreground: #EBEBED;
+  
+  --muted: #2F2F2F;
+  --muted-foreground: #999999;
+  
+  --accent: #2F2F2F;
+  --accent-foreground: #EBEBED;
+  
   --destructive: oklch(0.396 0.141 25.723);
   --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.274 0.006 286.033);
-  --input: oklch(0.274 0.006 286.033);
-  --ring: oklch(0.442 0.017 285.786);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.21 0.006 285.885);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.274 0.006 286.033);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.274 0.006 286.033);
-  --sidebar-ring: oklch(0.442 0.017 285.786);
+  
+  --border: #2F2F2F;
+  --input: #2F2F2F;
+  --ring: #444444;
+  
+  /* Muted chart colors for cleaner look */
+  --chart-1: #EBEBED;
+  --chart-2: #999999;
+  --chart-3: #666666;
+  --chart-4: #444444;
+  --chart-5: #2F2F2F;
+  
+  --sidebar: #202020;
+  --sidebar-foreground: #EBEBED;
+  --sidebar-primary: #EBEBED;
+  --sidebar-primary-foreground: #191919;
+  --sidebar-accent: #2F2F2F;
+  --sidebar-accent-foreground: #EBEBED;
+  --sidebar-border: #2F2F2F;
+  --sidebar-ring: #444444;
 }
 
 @theme inline {

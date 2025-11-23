@@ -6,7 +6,6 @@ import {
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 
-import Header from '../components/Header'
 import { ThemeProvider } from '../components/theme-provider'
 
 import StoreDevtools from '../lib/demo-store-devtools'
@@ -54,7 +53,6 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-          <Header />
           {children}
           <TanStackDevtools
             config={{
