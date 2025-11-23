@@ -10,7 +10,7 @@ function ProfilePage() {
 
   useEffect(() => {
     // Only load CDP components on the client side to avoid SSR issues
-    import('../components/wallet/ProfileContent').then((mod) => {
+    import('../components/wallet/ProfileContent.tsx').then((mod) => {
       setProfileComponent(() => mod.default)
     })
   }, [])

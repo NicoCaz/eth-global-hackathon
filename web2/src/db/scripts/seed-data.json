@@ -1,0 +1,242 @@
+{
+  "campaigns": [
+    {
+      "contractAddress": "0x1234567890123456789012345678901234567890",
+      "creatorUserId": "user_creator_alice_123",
+      "creatorWalletAddress": "0xA1B2C3D4E5F6789012345678901234567890ABCD",
+      "title": "Save the Ocean Cleanup Initiative",
+      "description": "Help us remove plastic waste from our oceans. Every donation counts and you have a chance to win a portion of the raffle pot! We're deploying advanced cleanup technology to remove microplastics and larger debris from critical ocean zones.",
+      "logo": "logo1.svg",
+      "logoMimeType": "image/svg+xml",
+      "rafflePercentage": 10,
+      "goalAmount": "50.0",
+      "endDate": "2025-12-31T23:59:59Z",
+      "status": "active",
+      "totalRaised": "12.5",
+      "rafflePot": "1.25",
+      "donationCount": 8
+    },
+    {
+      "contractAddress": "0x2345678901234567890123456789012345678901",
+      "creatorUserId": "user_creator_bob_456",
+      "creatorWalletAddress": "0xB2C3D4E5F6789012345678901234567890ABCDEF",
+      "title": "Community School Technology Fund",
+      "description": "Raising funds to provide laptops and internet access to underprivileged students in our community. Education is the key to breaking the cycle of poverty. Support this cause and enter our raffle!",
+      "logo": "logo2.svg",
+      "logoMimeType": "image/svg+xml",
+      "rafflePercentage": 15,
+      "goalAmount": "25.0",
+      "endDate": "2025-11-30T23:59:59Z",
+      "status": "active",
+      "totalRaised": "18.75",
+      "rafflePot": "2.8125",
+      "donationCount": 15
+    },
+    {
+      "contractAddress": "0x3456789012345678901234567890123456789012",
+      "creatorUserId": "user_creator_carol_789",
+      "creatorWalletAddress": "0xC3D4E5F6789012345678901234567890ABCDEF12",
+      "title": "Urban Garden Project",
+      "description": "Transform vacant city lots into thriving community gardens. We'll grow fresh produce for local food banks and create green spaces for neighborhoods. Join us in making cities greener!",
+      "logo": "logo1.svg",
+      "logoMimeType": "image/svg+xml",
+      "rafflePercentage": 20,
+      "goalAmount": "15.0",
+      "endDate": "2026-01-15T23:59:59Z",
+      "status": "active",
+      "totalRaised": "8.4",
+      "rafflePot": "1.68",
+      "donationCount": 12
+    },
+    {
+      "contractAddress": "0x4567890123456789012345678901234567890123",
+      "creatorUserId": "user_creator_david_101",
+      "creatorWalletAddress": "0xD4E5F6789012345678901234567890ABCDEF1234",
+      "title": "Wildlife Rescue and Rehabilitation",
+      "description": "Our wildlife rescue center saves injured and orphaned animals. We need funds for medical supplies, food, and facility maintenance. Every donation helps us save lives and you could win big in our raffle!",
+      "logo": "logo2.svg",
+      "logoMimeType": "image/svg+xml",
+      "rafflePercentage": 12,
+      "goalAmount": "40.0",
+      "endDate": "2025-12-15T23:59:59Z",
+      "status": "active",
+      "totalRaised": "22.8",
+      "rafflePot": "2.736",
+      "donationCount": 19
+    },
+    {
+      "contractAddress": "0x5678901234567890123456789012345678901234",
+      "creatorUserId": "user_creator_eve_202",
+      "creatorWalletAddress": "0xE5F6789012345678901234567890ABCDEF123456",
+      "title": "Open Source Developer Fund",
+      "description": "Supporting developers who build the tools we all depend on. This fund provides grants to maintainers of critical open-source projects. Help us keep the internet free and open!",
+      "logo": "logo1.svg",
+      "logoMimeType": "image/svg+xml",
+      "rafflePercentage": 8,
+      "goalAmount": "100.0",
+      "endDate": "2026-03-01T23:59:59Z",
+      "status": "active",
+      "totalRaised": "45.6",
+      "rafflePot": "3.648",
+      "donationCount": 28
+    },
+    {
+      "contractAddress": "0x6789012345678901234567890123456789012345",
+      "creatorUserId": "user_creator_frank_303",
+      "creatorWalletAddress": "0xF6789012345678901234567890ABCDEF12345678",
+      "title": "Disaster Relief Emergency Fund",
+      "description": "Rapid response fund for natural disasters. When disaster strikes, we provide immediate aid: food, water, shelter, and medical supplies. Be part of our emergency response team!",
+      "logo": "logo2.svg",
+      "logoMimeType": "image/svg+xml",
+      "rafflePercentage": 5,
+      "goalAmount": "75.0",
+      "endDate": "2025-12-31T23:59:59Z",
+      "status": "ended",
+      "totalRaised": "82.5",
+      "rafflePot": "4.125",
+      "donationCount": 67
+    }
+  ],
+  "donations": [
+    {
+      "campaignContractAddress": "0x1234567890123456789012345678901234567890",
+      "donorUserId": "user_donor_alice_001",
+      "donorWalletAddress": "0x1111111111111111111111111111111111111111",
+      "amount": "2.5",
+      "txHash": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+      "blockNumber": 1000001
+    },
+    {
+      "campaignContractAddress": "0x1234567890123456789012345678901234567890",
+      "donorUserId": "user_donor_bob_002",
+      "donorWalletAddress": "0x2222222222222222222222222222222222222222",
+      "amount": "1.0",
+      "txHash": "0xbcdef1234567890abcdef1234567890abcdef1234567890abcdef12345678901",
+      "blockNumber": 1000015
+    },
+    {
+      "campaignContractAddress": "0x1234567890123456789012345678901234567890",
+      "donorUserId": null,
+      "donorWalletAddress": "0x3333333333333333333333333333333333333333",
+      "amount": "5.0",
+      "txHash": "0xcdef1234567890abcdef1234567890abcdef1234567890abcdef123456789012",
+      "blockNumber": 1000032
+    },
+    {
+      "campaignContractAddress": "0x2345678901234567890123456789012345678901",
+      "donorUserId": "user_donor_carol_003",
+      "donorWalletAddress": "0x4444444444444444444444444444444444444444",
+      "amount": "3.5",
+      "txHash": "0xdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890123",
+      "blockNumber": 1000045
+    },
+    {
+      "campaignContractAddress": "0x2345678901234567890123456789012345678901",
+      "donorUserId": "user_donor_david_004",
+      "donorWalletAddress": "0x5555555555555555555555555555555555555555",
+      "amount": "0.5",
+      "txHash": "0xef1234567890abcdef1234567890abcdef1234567890abcdef12345678901234",
+      "blockNumber": 1000067
+    },
+    {
+      "campaignContractAddress": "0x2345678901234567890123456789012345678901",
+      "donorUserId": "user_donor_eve_005",
+      "donorWalletAddress": "0x6666666666666666666666666666666666666666",
+      "amount": "2.25",
+      "txHash": "0xf1234567890abcdef1234567890abcdef1234567890abcdef123456789012345",
+      "blockNumber": 1000089
+    },
+    {
+      "campaignContractAddress": "0x3456789012345678901234567890123456789012",
+      "donorUserId": null,
+      "donorWalletAddress": "0x7777777777777777777777777777777777777777",
+      "amount": "1.2",
+      "txHash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+      "blockNumber": 1000102
+    },
+    {
+      "campaignContractAddress": "0x3456789012345678901234567890123456789012",
+      "donorUserId": "user_donor_frank_006",
+      "donorWalletAddress": "0x8888888888888888888888888888888888888888",
+      "amount": "3.8",
+      "txHash": "0x234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1",
+      "blockNumber": 1000123
+    },
+    {
+      "campaignContractAddress": "0x4567890123456789012345678901234567890123",
+      "donorUserId": "user_donor_grace_007",
+      "donorWalletAddress": "0x9999999999999999999999999999999999999999",
+      "amount": "10.0",
+      "txHash": "0x34567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef12",
+      "blockNumber": 1000145
+    },
+    {
+      "campaignContractAddress": "0x4567890123456789012345678901234567890123",
+      "donorUserId": "user_donor_henry_008",
+      "donorWalletAddress": "0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "amount": "5.5",
+      "txHash": "0x4567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef123",
+      "blockNumber": 1000167
+    },
+    {
+      "campaignContractAddress": "0x5678901234567890123456789012345678901234",
+      "donorUserId": null,
+      "donorWalletAddress": "0xBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+      "amount": "8.0",
+      "txHash": "0x567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234",
+      "blockNumber": 1000189
+    },
+    {
+      "campaignContractAddress": "0x5678901234567890123456789012345678901234",
+      "donorUserId": "user_donor_iris_009",
+      "donorWalletAddress": "0xCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC",
+      "amount": "12.5",
+      "txHash": "0x67890abcdef1234567890abcdef1234567890abcdef1234567890abcdef12345",
+      "blockNumber": 1000210
+    },
+    {
+      "campaignContractAddress": "0x5678901234567890123456789012345678901234",
+      "donorUserId": "user_donor_jack_010",
+      "donorWalletAddress": "0xDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD",
+      "amount": "3.2",
+      "txHash": "0x7890abcdef1234567890abcdef1234567890abcdef1234567890abcdef123456",
+      "blockNumber": 1000234
+    },
+    {
+      "campaignContractAddress": "0x6789012345678901234567890123456789012345",
+      "donorUserId": "user_donor_kate_011",
+      "donorWalletAddress": "0xEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE",
+      "amount": "15.0",
+      "txHash": "0x890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567",
+      "blockNumber": 1000256
+    },
+    {
+      "campaignContractAddress": "0x6789012345678901234567890123456789012345",
+      "donorUserId": null,
+      "donorWalletAddress": "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+      "amount": "7.25",
+      "txHash": "0x90abcdef1234567890abcdef1234567890abcdef1234567890abcdef12345678",
+      "blockNumber": 1000278
+    },
+    {
+      "campaignContractAddress": "0x6789012345678901234567890123456789012345",
+      "donorUserId": "user_donor_leo_012",
+      "donorWalletAddress": "0x0000000000000000000000000000000000000001",
+      "amount": "20.0",
+      "txHash": "0x0abcdef1234567890abcdef1234567890abcdef1234567890abcdef123456789",
+      "blockNumber": 1000301
+    }
+  ],
+  "raffleWinners": [
+    {
+      "campaignContractAddress": "0x6789012345678901234567890123456789012345",
+      "winnerUserId": "user_donor_kate_011",
+      "winnerWalletAddress": "0xEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE",
+      "prizeAmount": "4.125",
+      "txHash": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef123456789a",
+      "blockNumber": 1000350,
+      "randomSeed": "0x789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456"
+    }
+  ]
+}
+
