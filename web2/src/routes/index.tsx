@@ -4,7 +4,7 @@ import { db } from '@/db'
 import { campaigns } from '@/db/schema'
 import { asc } from 'drizzle-orm'
 import { CampaignCard } from '@/components/CampaignCard'
-import { Plus, Sparkles, Trophy, Zap } from 'lucide-react'
+import { ArrowRight, Plus, Sparkles, Trophy, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 const getCampaigns = createServerFn({
@@ -24,7 +24,14 @@ function App() {
   const campaigns = Route.useLoaderData()
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground relative">
+      <div className="absolute top-6 right-6 z-10">
+        <Link to="/dashboard" className="text-sm font-medium hover:text-muted-foreground flex items-center gap-1">
+          Dashboard
+          <ArrowRight className="size-3" />
+        </Link>
+      </div>
+
       {/* Hero Section */}
       <section className="pt-24 pb-16 px-6">
         <div className="max-w-4xl mx-auto text-center">
