@@ -1,27 +1,13 @@
 import { useEvmAddress } from "@coinbase/cdp-hooks";
-import { SendEvmTransactionButton } from "@coinbase/cdp-react/components/SendEvmTransactionButton";
 import { Button } from "@/components/ui/button";
-import { useEffect, useMemo, useState } from "react";
-import { encodeFunctionData, createPublicClient, http, toHex, getContract } from "viem";
-import { baseSepolia } from "viem/chains";
-import { PROJECT_RAFFLE_ABI, ENTROPY_ABI } from "@/constants/abi";
+import { useEffect, useState } from "react";
 import { Loader2, AlertCircle } from "lucide-react";
+import { getCampaignState, endCampaign } from "@/lib/campaign-actions";
 
 interface EndCampaignButtonProps {
   campaignAddress: string;
   donationCount: number;
   onCampaignEnded?: () => void;
-}
-
-const client = createPublicClient({
-  chain: baseSepolia,
-  transport: http(),
-});
-
-enum RaffleState {
-  Active = 0,
-  EntropyRequested = 1,
-  DrawExecuted = 2,
 }
 
 export function EndCampaignButton({
@@ -32,132 +18,62 @@ export function EndCampaignButton({
   const { evmAddress } = useEvmAddress();
   
   // State management
-  const [contractState, setContractState] = useState<RaffleState | null>(null);
-  const [entropyFee, setEntropyFee] = useState<bigint | null>(null);
-  const [userRandomNumber, setUserRandomNumber] = useState<`0x${string}` | null>(null);
+  const [campaignState, setCampaignState] = useState<{ status: string; creatorWalletAddress: string } | null>(null);
   const [isLoadingState, setIsLoadingState] = useState(false);
-  const [isWaitingForReceipt, setIsWaitingForReceipt] = useState(false);
-  const [txHash, setTxHash] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [internalError, setInternalError] = useState<string | null>(null);
 
-  // Fetch contract state and entropy fee
+  // Fetch campaign state
   useEffect(() => {
-    const fetchContractData = async () => {
-      if (!campaignAddress) return;
+    const fetchCampaignData = async () => {
+      if (!campaignAddress || !evmAddress) return;
       
       try {
         setIsLoadingState(true);
         setInternalError(null);
 
-        const contract = getContract({
-          address: campaignAddress as `0x${string}`,
-          abi: PROJECT_RAFFLE_ABI,
-          client: client,
-        });
+        const state = await getCampaignState({ data: campaignAddress });
+        setCampaignState(state);
 
-        // Read contract state
-        const state = await contract.read.state();
-        setContractState(state as RaffleState);
-
-        // If Active, fetch entropy fee
-        if (state === RaffleState.Active) {
-          // Generate random number once
-          if (!userRandomNumber) {
-            const randomBytes = new Uint8Array(32);
-            crypto.getRandomValues(randomBytes);
-            setUserRandomNumber(toHex(randomBytes));
-          }
-
-          // Get entropy provider and entropy contract addresses
-          const entropyProvider = await contract.read.entropyProvider();
-          const entropyAddress = await contract.read.getEntropy();
-
-          // Get fee from entropy contract
-          const entropyContract = getContract({
-            address: entropyAddress,
-            abi: ENTROPY_ABI,
-            client: client,
-          });
-
-          const fee = await entropyContract.read.getFee([entropyProvider]);
-          setEntropyFee(fee);
-        }
       } catch (e) {
-        console.error("Error fetching contract data:", e);
+        console.error("Error fetching campaign data:", e);
         setInternalError(e instanceof Error ? e.message : "Failed to load campaign state");
       } finally {
         setIsLoadingState(false);
       }
     };
 
-    fetchContractData();
-  }, [campaignAddress, userRandomNumber]);
+    fetchCampaignData();
+  }, [campaignAddress, evmAddress]);
 
-  // Construct the transaction
-  const transaction = useMemo(() => {
-    // Reset error when dependencies change
-    setInternalError(null);
-
-    // Check all required conditions
-    if (contractState !== RaffleState.Active) return undefined;
-    if (donationCount === 0) return undefined;
-    if (!userRandomNumber) return undefined;
-    if (!entropyFee) return undefined;
-    if (!campaignAddress) return undefined;
+  const handleEndCampaign = async () => {
+    if (!campaignAddress || !evmAddress) return;
 
     try {
-      const data = encodeFunctionData({
-        abi: PROJECT_RAFFLE_ABI,
-        functionName: "requestEntropy",
-        args: [userRandomNumber],
+      setIsProcessing(true);
+      setInternalError(null);
+
+      const result = await endCampaign({
+        data: {
+          contractAddress: campaignAddress,
+          userAddress: evmAddress,
+        },
       });
 
-      return {
-        to: campaignAddress as `0x${string}`,
-        value: entropyFee,
-        data,
-        chainId: 84532, // Base Sepolia
-        type: 'eip1559' as const,
-      };
-    } catch (e) {
-      console.error("Error constructing transaction:", e);
-      return undefined;
-    }
-  }, [contractState, donationCount, userRandomNumber, entropyFee, campaignAddress]);
-
-  const handleSuccess = async (hash: string) => {
-    setTxHash(hash);
-    setIsWaitingForReceipt(true);
-    setInternalError(null);
-    
-    try {
-      await client.waitForTransactionReceipt({ 
-        hash: hash as `0x${string}` 
-      });
-      
-      // Campaign successfully ended
-      if (onCampaignEnded) {
-        onCampaignEnded();
+      if (result.success) {
+        // Refresh state
+        setCampaignState((prev) => prev ? { ...prev, status: 'winner_selected' } : null);
+        
+        if (onCampaignEnded) {
+          onCampaignEnded();
+        }
       }
-
-      // Update state to reflect the change
-      setContractState(RaffleState.EntropyRequested);
     } catch (e) {
-      console.error("Error waiting for receipt:", e);
-      const errorMessage = e instanceof Error ? e.message : "Failed to verify transaction";
-      setInternalError(errorMessage);
+      console.error("Error ending campaign:", e);
+      setInternalError(e instanceof Error ? e.message : "Failed to end campaign");
     } finally {
-      setIsWaitingForReceipt(false);
-      setTxHash(null);
+      setIsProcessing(false);
     }
-  };
-
-  const handleError = (error: Error | { message: string }) => {
-    console.error("Transaction error:", error);
-    const errorMessage = error.message || "Transaction failed";
-    setInternalError(errorMessage);
-    setIsWaitingForReceipt(false);
-    setTxHash(null);
   };
 
   // Render states
@@ -166,29 +82,6 @@ export function EndCampaignButton({
       <Button disabled variant="outline" className="w-full">
         Connect Wallet to Manage
       </Button>
-    );
-  }
-
-  if (isWaitingForReceipt) {
-    return (
-      <div className="w-full space-y-2">
-        <Button disabled className="w-full" variant="secondary">
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Processing...
-        </Button>
-        {txHash && (
-          <div className="text-xs text-center">
-            <a
-              href={`https://sepolia.basescan.org/tx/${txHash}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary hover:underline"
-            >
-              View on Explorer
-            </a>
-          </div>
-        )}
-      </div>
     );
   }
 
@@ -214,10 +107,23 @@ export function EndCampaignButton({
     );
   }
 
-  if (contractState !== RaffleState.Active) {
-    const stateText = contractState === RaffleState.EntropyRequested 
-      ? "Waiting for Draw" 
-      : contractState === RaffleState.DrawExecuted 
+  // Check if authorized
+  const isAuthorized = campaignState?.creatorWalletAddress.toLowerCase() === evmAddress.toLowerCase();
+  
+  if (campaignState && !isAuthorized) {
+    return (
+      <div className="w-full space-y-2">
+         <Button disabled variant="outline" className="w-full">
+          Not Authorized
+        </Button>
+      </div>
+    );
+  }
+
+  if (campaignState?.status !== 'active') {
+    const stateText = campaignState?.status === 'winner_selected' 
+      ? "Winner Selected" 
+      : campaignState?.status === 'ended' 
       ? "Campaign Ended" 
       : "Not Active";
     
@@ -238,26 +144,24 @@ export function EndCampaignButton({
         </div>
       )}
 
-      {!transaction ? (
-        <Button disabled className="w-full">
-          Preparing Transaction...
-        </Button>
-      ) : (
-        <SendEvmTransactionButton
-          className="w-full"
-          account={evmAddress}
-          network="base-sepolia"
-          transaction={transaction}
-          onSuccess={handleSuccess}
-          onError={handleError}
-        >
-          <span className="w-full">End Campaign</span>
-        </SendEvmTransactionButton>
-      )}
+      <Button 
+        className="w-full" 
+        onClick={handleEndCampaign}
+        disabled={isProcessing}
+      >
+        {isProcessing ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Selecting Winner...
+          </>
+        ) : (
+          "End Campaign & Pick Winner"
+        )}
+      </Button>
       
-      <p className="text-xs text-muted-foreground text-center">
-        Requires a small fee for randomness
-      </p>
+      <div className="text-xs text-muted-foreground text-center space-y-1">
+        <p>This will randomly select a winner from the donors.</p>
+      </div>
     </div>
   );
 }

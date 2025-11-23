@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { Clock, ExternalLink, Target, Trophy } from 'lucide-react'
+import { Clock, ExternalLink, Target, Trophy, Gift } from 'lucide-react'
 import { Campaign } from './CampaignCard'
 import { EndCampaignButton } from './wallet/EndCampaignButton'
+import { getWinner } from '@/lib/campaign-actions'
 
 interface OwnerCampaignCardProps {
   campaign: Campaign
+  onCampaignUpdate?: () => void
 }
 
 function formatTimeRemaining(endDate: Date): string {
@@ -45,8 +47,9 @@ function getStatusBadge(status: string) {
   }
 }
 
-export function OwnerCampaignCard({ campaign }: OwnerCampaignCardProps) {
+export function OwnerCampaignCard({ campaign, onCampaignUpdate }: OwnerCampaignCardProps) {
   const [timeRemaining, setTimeRemaining] = useState<string>(formatTimeRemaining(campaign.endDate))
+  const [winnerAddress, setWinnerAddress] = useState<string | null>(null)
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -55,6 +58,23 @@ export function OwnerCampaignCard({ campaign }: OwnerCampaignCardProps) {
 
     return () => clearInterval(interval)
   }, [campaign.endDate])
+
+  useEffect(() => {
+    const fetchWinner = async () => {
+      if (campaign.status === 'winner_selected') {
+        try {
+          const winner = await getWinner({ data: campaign.contractAddress })
+          if (winner) {
+            setWinnerAddress(winner.winnerWalletAddress)
+          }
+        } catch (error) {
+          console.error('Failed to fetch winner:', error)
+        }
+      }
+    }
+    fetchWinner()
+  }, [campaign.status, campaign.contractAddress])
+
 
   const totalRaised = Number.parseFloat(campaign.totalRaised)
   const goalAmount = campaign.goalAmount ? Number.parseFloat(campaign.goalAmount) : null
@@ -102,6 +122,17 @@ export function OwnerCampaignCard({ campaign }: OwnerCampaignCardProps) {
             <span>{Number.parseFloat(campaign.rafflePot).toFixed(4)} ETH pot</span>
           </div>
         </div>
+
+        {winnerAddress && (
+          <div className="mt-3 p-2 bg-blue-500/10 border border-blue-500/20 rounded-md flex items-center gap-2 text-sm text-blue-400">
+            <Gift className="w-4 h-4" />
+            <span>
+              Winner: <span className="font-mono font-medium text-blue-300">
+                {winnerAddress.slice(0, 6)}...{winnerAddress.slice(-4)}
+              </span>
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Right Actions / Stats */}
@@ -119,9 +150,9 @@ export function OwnerCampaignCard({ campaign }: OwnerCampaignCardProps) {
         <EndCampaignButton 
           campaignAddress={campaign.contractAddress}
           donationCount={campaign.donationCount}
+          onCampaignEnded={onCampaignUpdate}
         />
       </div>
     </div>
   )
 }
-
