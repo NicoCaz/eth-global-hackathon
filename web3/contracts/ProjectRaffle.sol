@@ -324,5 +324,22 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
         require(participants.length > 0, "No participants");
         return _selectWinner(entropySeed);
     }
+    
+    /**
+     * @notice Función de emergencia para forzar la selección del ganador (solo owner/admin)
+     * @dev Permite al owner seleccionar el ganador sin esperar a Pyth (para testing/emergencias)
+     * @param randomNumber Número aleatorio a usar para la selección
+     */
+    function forceSelectWinner(bytes32 randomNumber) external onlyOwnerOrAdmin {
+        require(state == RaffleState.Active || state == RaffleState.EntropyRequested, "Invalid state");
+        require(participants.length > 0, "No participants");
+        require(totalTickets > 0, "No tickets sold");
+        
+        // Seleccionar ganador
+        winner = _selectWinner(randomNumber);
+        state = RaffleState.DrawExecuted;
+        
+        emit DrawExecuted(winner, uint256(randomNumber) % totalTickets);
+    }
 }
 

@@ -3,7 +3,7 @@ import * as dotenv from "dotenv";
 import ProjectRaffleArtifact from "../artifacts/contracts/ProjectRaffle.sol/ProjectRaffle.json" assert { type: "json" };
 
 // Dirección de la rifa que queremos cerrar
-const RAFFLE_ADDRESS = "0xAed632c4bF95AbA7550B6Dfb2E0E4072A3fB34e0";
+const RAFFLE_ADDRESS = "0x3374974DDE6eA5faAa5165cB21784279943C81a2";
 
 dotenv.config();
 
@@ -60,9 +60,10 @@ async function main() {
     throw new Error(`❌ La rifa no está en estado Active (estado actual: ${state})`);
   }
 
-  if (timeRemaining > 0n) {
-    throw new Error(`❌ La rifa aún está activa. Espera ${timeRemaining} segundos`);
-  }
+  // Comentado para permitir cierre anticipado
+  // if (timeRemaining > 0n) {
+  //   throw new Error(`❌ La rifa aún está activa. Espera ${timeRemaining} segundos`);
+  // }
 
   if (totalTickets === 0n) {
     throw new Error("❌ No hay tickets vendidos");

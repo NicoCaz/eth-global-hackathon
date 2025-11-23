@@ -3,7 +3,7 @@ import * as dotenv from "dotenv";
 import ProjectRaffleArtifact from "../artifacts/contracts/ProjectRaffle.sol/ProjectRaffle.json" assert { type: "json" };
 
 // Dirección de la rifa donde distribuir fondos
-const RAFFLE_ADDRESS = "0x43B53e7d0BBc668dD4006B0A5b35174884ECe617";
+const RAFFLE_ADDRESS = "0xAed632c4bF95AbA7550B6Dfb2E0E4072A3fB34e0";
 
 dotenv.config();
 
