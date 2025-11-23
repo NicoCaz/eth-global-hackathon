@@ -54,6 +54,83 @@ export async function getRaffleCount(client: FactoryClient) {
 }
 
 export async function getRaffleInfo(client: FactoryClient, index: number) {
-  return client.factory.getRaffleInfo(index);
+  const result = await client.factory.getRaffleInfo(index);
+  return {
+    raffleAddress: result[0],
+    projectName: result[1],
+    state: result[2],
+    totalTickets: result[3],
+    participantCount: result[4],
+  };
+}
+
+/**
+ * Gets all raffle addresses created by this factory
+ * @param client Factory client
+ * @returns Array of raffle addresses
+ */
+export async function getAllRaffles(client: FactoryClient) {
+  return client.factory.getAllRaffles();
+}
+
+/**
+ * Gets the latest N raffles created
+ * @param client Factory client
+ * @param count Number of raffles to retrieve
+ * @returns Array of raffle addresses (most recent first)
+ */
+export async function getLatestRaffles(
+  client: FactoryClient,
+  count: number
+) {
+  return client.factory.getLatestRaffles(count);
+}
+
+/**
+ * Checks if an address is a raffle created by this factory
+ * @param client Factory client
+ * @param address Address to check
+ * @returns true if the address is a valid raffle
+ */
+export async function isRaffle(
+  client: FactoryClient,
+  address: string
+) {
+  return client.factory.isRaffle(address);
+}
+
+/**
+ * Gets the entropy contract address configured in the factory
+ * @param client Factory client
+ * @returns Entropy contract address
+ */
+export async function getEntropyAddress(client: FactoryClient) {
+  return client.factory.entropyAddress();
+}
+
+/**
+ * Updates the entropy configuration
+ * @param client Factory client
+ * @param entropyAddress New entropy contract address
+ * @requires Must be called by factory owner
+ */
+export async function updateEntropyConfig(
+  client: FactoryClient,
+  entropyAddress: string
+) {
+  if (!client.signer) {
+    throw new Error("Factory client requires a signer to update entropy config");
+  }
+  const tx = await client.factory.updateEntropyConfig(entropyAddress);
+  return tx.wait();
+}
+
+/**
+ * Gets the owner of the factory
+ * @param client Factory client
+ * @returns Owner address
+ */
+export async function getFactoryOwner(client: FactoryClient) {
+  return client.factory.owner();
 }
 
