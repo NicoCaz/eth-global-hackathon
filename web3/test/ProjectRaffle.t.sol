@@ -67,6 +67,6 @@ contract ProjectRaffleTest {
     }
     
     function test_EntropyContract_IsSet() public view {
-        require(raffle.getEntropy() == address(mockEntropy), "Entropy contract should be set");
+        require(raffle.getEntropyAddress() == address(mockEntropy), "Entropy contract should be set");
     }
 }

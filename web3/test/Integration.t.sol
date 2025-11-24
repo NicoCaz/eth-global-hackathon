@@ -263,8 +263,8 @@ contract IntegrationTest {
     }
     
     function test_AddressValidations_EntropyContract() public view {
-        require(raffle1.getEntropy() == address(mockEntropy), "Raffle 1 entropy should match");
-        require(raffle2.getEntropy() == address(mockEntropy), "Raffle 2 entropy should match");
+        require(raffle1.getEntropyAddress() == address(mockEntropy), "Raffle 1 entropy should match");
+        require(raffle2.getEntropyAddress() == address(mockEntropy), "Raffle 2 entropy should match");
     }
     
     // ========== SCENARIO 11: Factory Validation ==========

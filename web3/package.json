@@ -25,7 +25,7 @@
   "homepage": "https://github.com/NicoCaz/eth-global-hackathon#readme",
   "dependencies": {
     "@openzeppelin/contracts": "^4.9.6",
-    "@pythnetwork/entropy-sdk-solidity": "^2.2.0",
+    "@pythnetwork/entropy-sdk-solidity": "^2.2.1",
     "hardhat": "^3.0.15"
   },
   "type": "module",

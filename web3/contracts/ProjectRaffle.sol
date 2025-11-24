@@ -4,8 +4,8 @@ pragma solidity ^0.8.28;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import { PullPayment } from "@openzeppelin/contracts/security/PullPayment.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import { IEntropyConsumer } from "./interfaces/IEntropyConsumer.sol";
-import { IEntropyV2 } from "./interfaces/IEntropyV2.sol";
+import { IEntropyV2 } from "@pythnetwork/entropy-sdk-solidity/IEntropyV2.sol";
+import { IEntropyConsumer } from "@pythnetwork/entropy-sdk-solidity/IEntropyConsumer.sol";
  
 /**
  * @title ProjectRaffle
@@ -14,6 +14,8 @@ import { IEntropyV2 } from "./interfaces/IEntropyV2.sol";
  * @dev Usa PullPayment para seguridad y Binary Search para eficiencia
  */
 contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsumer {
+    // Configuración de gas para el callback de Pyth Entropy
+    uint32 public constant ENTROPY_CALLBACK_GAS_LIMIT = 100000;
     // Información del proyecto
     string public projectName;
     string public projectDescription;
@@ -148,15 +150,15 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
         
         state = RaffleState.EntropyRequested;
         
-        // Obtener el fee necesario para la solicitud
-        uint256 fee = entropy.getFee(entropyProvider);
+        // Obtener el fee necesario para la solicitud (V2 API)
+        uint128 fee = entropy.getFeeV2(entropyProvider, ENTROPY_CALLBACK_GAS_LIMIT);
         require(msg.value >= fee, "Insufficient fee");
         
-        // Solicitar entropía a Pyth
-        entropySequenceNumber = entropy.request{value: fee}(
+        // Solicitar entropía a Pyth usando V2 API
+        entropySequenceNumber = entropy.requestV2{value: fee}(
             entropyProvider,
             userRandomNumber,
-            true // use blockhash
+            ENTROPY_CALLBACK_GAS_LIMIT
         );
         
         emit EntropyRequested(entropySequenceNumber);
@@ -168,8 +170,8 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
     }
     
     /**
-     * @notice Callback de Pyth con la entropía generada
-     * @dev Esta función será llamada por el contrato de Entropy
+     * @notice Callback interno de Pyth con la entropía generada
+     * @dev Esta función será llamada por _entropyCallback del abstract contract IEntropyConsumer
      * @param sequenceNumber Número de secuencia de la solicitud
      * @param provider Dirección del proveedor
      * @param randomNumber Número aleatorio generado
@@ -178,8 +180,7 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
         uint64 sequenceNumber,
         address provider,
         bytes32 randomNumber
-    ) external override {
-        require(msg.sender == address(entropy), "Only entropy contract");
+    ) internal override {
         require(state == RaffleState.EntropyRequested, "Entropy not requested");
         require(sequenceNumber == entropySequenceNumber, "Invalid sequence number");
         require(provider == entropyProvider, "Invalid provider");
@@ -192,10 +193,20 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
     }
     
     /**
-     * @notice Obtiene la dirección del contrato de Entropy
+     * @notice Obtiene la dirección del contrato de Entropy (interno)
      * @return Dirección del contrato de Entropy
+     * @dev Implementación requerida por IEntropyConsumer abstract contract
      */
-    function getEntropy() external view override returns (address) {
+    function getEntropy() internal view override returns (address) {
+        return address(entropy);
+    }
+    
+    /**
+     * @notice Obtiene la dirección del contrato de Entropy (público)
+     * @return Dirección del contrato de Entropy
+     * @dev Método público para consultar la dirección de Entropy desde fuera del contrato
+     */
+    function getEntropyAddress() external view returns (address) {
         return address(entropy);
     }
     
