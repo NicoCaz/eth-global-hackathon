@@ -110,10 +110,11 @@ contract RaffleFactoryTest {
             RAFFLE_DURATION
         );
         
-        address[] memory allRaffles = factory.getAllRaffles();
+        (address[] memory allRaffles, bool hasMore) = factory.getAllRaffles(0, 10);
         require(allRaffles.length == 2, "Should have 2 raffles");
         require(allRaffles[0] == raffle1, "First raffle should match");
         require(allRaffles[1] == raffle2, "Second raffle should match");
+        require(hasMore == false, "Should not have more");
     }
     
     function test_GetLatestRaffles() public {

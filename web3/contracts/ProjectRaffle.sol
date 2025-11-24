@@ -15,14 +15,12 @@ import { IEntropyConsumer } from "@pythnetwork/entropy-sdk-solidity/IEntropyCons
  */
 contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsumer {
     // Configuración de gas para el callback de Pyth Entropy
-    uint32 public constant ENTROPY_CALLBACK_GAS_LIMIT = 100000;
-    // Información del proyecto
-    string public projectName;
-    string public projectDescription;
+    uint32 public entropyCallbackGasLimit;
+    // proyect configuration    
     uint256 public projectPercentage; // Porcentaje para el proyecto (Basis Points: 100 = 1%)
     uint256 public constant BASIS_POINTS = 10000;
-    uint256 public constant PLATFORM_FEE = 5; // 0.05% (5/10000)
-    uint256 public constant MIN_TICKET_PRICE = 0.0001 ether;
+    uint256 public platformFee; // Fee de plataforma (basis points)
+    uint256 public minTicketPrice; // Precio mínimo del ticket en wei
     
     // Estado de la rifa
     enum RaffleState { Active, EntropyRequested, DrawExecuted }
@@ -67,24 +65,26 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
     
     /**
      * @notice Constructor del contrato
-     * @param _projectName Nombre del proyecto
-     * @param _projectDescription Descripción del proyecto
      * @param _projectPercentage Porcentaje del proyecto en basis points (0-10000)
      * @param _entropyAddress Dirección del contrato de Pyth Entropy
      * @param _initialOwner Dirección del owner inicial
      * @param _platformAdmin Dirección del administrador de la plataforma
      * @param _projectAddress Dirección del proyecto que recibirá fondos
      * @param _raffleDuration Duración de la rifa en segundos
+     * @param _platformFee Fee de la plataforma en basis points
+     * @param _minTicketPrice Precio mínimo del ticket en wei
+     * @param _entropyCallbackGasLimit Límite de gas para el callback de Entropy
      */
     constructor(
-        string memory _projectName,
-        string memory _projectDescription,
         uint256 _projectPercentage,
         address _entropyAddress,
         address _initialOwner,
         address _platformAdmin,
         address _projectAddress,
-        uint256 _raffleDuration
+        uint256 _raffleDuration,
+        uint256 _platformFee,
+        uint256 _minTicketPrice,
+        uint32 _entropyCallbackGasLimit
     ) {
         require(_projectPercentage > 0, "Project percentage must be > 0");
         require(_projectPercentage <= BASIS_POINTS, "Project percentage cannot exceed 100%");
@@ -93,15 +93,19 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
         require(_platformAdmin != address(0), "Invalid admin address");
         require(_raffleDuration > 0, "Duration must be > 0");
         require(_initialOwner != address(0), "Invalid owner address");
-        
-        projectName = _projectName;
-        projectDescription = _projectDescription;
+        require(_platformFee <= 1000, "Platform fee cannot exceed 10%");
+        require(_minTicketPrice > 0, "Min ticket price must be > 0");
+        require(_entropyCallbackGasLimit >= 50000, "Gas limit too low");
+
         projectPercentage = _projectPercentage;
         entropy = IEntropyV2(_entropyAddress);
         projectAddress = _projectAddress;
         platformAdmin = _platformAdmin;
         raffleDuration = _raffleDuration;
         raffleStartTime = block.timestamp;
+        platformFee = _platformFee;
+        minTicketPrice = _minTicketPrice;
+        entropyCallbackGasLimit = _entropyCallbackGasLimit;
         
         // Obtener proveedor por defecto de Pyth
         entropyProvider = entropy.getDefaultProvider();
@@ -118,7 +122,7 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
     function buyTickets() external payable {
         require(state == RaffleState.Active, "Raffle not active");
         require(block.timestamp < raffleStartTime + raffleDuration, "Raffle ended");
-        require(msg.value >= MIN_TICKET_PRICE, "Minimum ticket price is 0.0001 ETH");
+        require(msg.value >= minTicketPrice, "Amount below minimum ticket price");
         
         totalTickets += msg.value;
         
@@ -151,14 +155,14 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
         state = RaffleState.EntropyRequested;
         
         // Obtener el fee necesario para la solicitud (V2 API)
-        uint128 fee = entropy.getFeeV2(entropyProvider, ENTROPY_CALLBACK_GAS_LIMIT);
+        uint128 fee = entropy.getFeeV2(entropyProvider, entropyCallbackGasLimit);
         require(msg.value >= fee, "Insufficient fee");
         
         // Solicitar entropía a Pyth usando V2 API
         entropySequenceNumber = entropy.requestV2{value: fee}(
             entropyProvider,
             userRandomNumber,
-            ENTROPY_CALLBACK_GAS_LIMIT
+            entropyCallbackGasLimit
         );
         
         emit EntropyRequested(entropySequenceNumber);
@@ -225,8 +229,8 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
         uint256 totalBalance = address(this).balance;
         
         // Calcular distribución (Base 10000)
-        // Fee de plataforma fijo: 0.05%
-        uint256 platformAmount = (totalBalance * PLATFORM_FEE) / BASIS_POINTS;
+        // Fee de plataforma (configurable)
+        uint256 platformAmount = (totalBalance * platformFee) / BASIS_POINTS;
         
         // El resto del pozo se divide entre proyecto y ganador
         uint256 distributablePool = totalBalance - platformAmount;
