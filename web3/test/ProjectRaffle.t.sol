@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {ProjectRaffle} from "../contracts/ProjectRaffle.sol";
+import {BaseRaffle} from "../contracts/BaseRaffle.sol";
+import {SingleWinnerRaffle} from "../contracts/SingleWinnerRaffle.sol";
 import {RaffleFactory} from "../contracts/RaffleFactory.sol";
 import {MockEntropy} from "../contracts/test/MockEntropy.sol";
 
 contract ProjectRaffleTest {
-    ProjectRaffle public raffle;
+    BaseRaffle public raffle;
     RaffleFactory public factory;
     MockEntropy public mockEntropy;
     
@@ -27,20 +28,16 @@ contract ProjectRaffleTest {
         factory = new RaffleFactory(address(mockEntropy), factoryOwner);
         
         // Create a raffle
-        address raffleAddress = factory.createRaffle(
-            "Test Project",
-            "Test Description",
+        address raffleAddress = factory.createSingleWinnerRaffle(
             PROJECT_PERCENTAGE,
             projectReceiver,
             RAFFLE_DURATION
         );
         
-        raffle = ProjectRaffle(raffleAddress);
+        raffle = BaseRaffle(raffleAddress);
     }
     
     function test_InitialState() public view {
-        require(keccak256(bytes(raffle.projectName())) == keccak256(bytes("Test Project")), "Wrong project name");
-        require(keccak256(bytes(raffle.projectDescription())) == keccak256(bytes("Test Description")), "Wrong description");
         require(raffle.projectPercentage() == PROJECT_PERCENTAGE, "Wrong percentage");
         require(uint256(raffle.state()) == 0, "Should be Active"); // Active
         require(raffle.totalTickets() == 0, "Should have 0 tickets");

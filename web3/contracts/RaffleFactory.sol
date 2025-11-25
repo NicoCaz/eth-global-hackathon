@@ -2,23 +2,29 @@
 pragma solidity ^0.8.28;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./ProjectRaffle.sol";
+import "./BaseRaffle.sol";
+import "./SingleWinnerRaffle.sol";
 
 /**
  * @title RaffleFactory
- * @notice Factory contract for creating and managing multiple project raffles
+ * @notice Factory contract for creating and managing raffles
  * @dev Centralizes raffle deployment with configurable platform parameters
+ * @dev Supports SingleWinner raffle type
  */
 contract RaffleFactory is Ownable {
-    ProjectRaffle[] public raffles;
+    BaseRaffle[] public raffles;
     mapping(address => bool) public isRaffle;
     
     address public entropyAddress;
     uint256 public platformFee;
     uint256 public minTicketPrice;
-    uint32 public entropyCallbackGasLimit;    
+    uint32 public entropyCallbackGasLimit;
+    
+    enum RaffleType { SingleWinner }
+    
     event RaffleCreated(
         address indexed raffleAddress,
+        RaffleType raffleType,
         uint256 projectPercentage,
         address indexed creator
     );
@@ -47,13 +53,13 @@ contract RaffleFactory is Ownable {
     }
     
     /**
-     * @notice Creates a new project raffle
+     * @notice Creates a single winner raffle
      * @param projectPercentage Project allocation in basis points (5000 = 50%)
      * @param projectAddress Project address that will receive funds
      * @param raffleDuration Raffle duration in seconds
      * @return Address of the created raffle contract
      */
-    function createRaffle(
+    function createSingleWinnerRaffle(
         uint256 projectPercentage,
         address projectAddress,
         uint256 raffleDuration
@@ -63,7 +69,7 @@ contract RaffleFactory is Ownable {
         require(projectAddress != address(0), "Invalid project address");
         require(raffleDuration > 0, "Duration must be > 0");
         
-        ProjectRaffle raffle = new ProjectRaffle(
+        SingleWinnerRaffle raffle = new SingleWinnerRaffle(
             projectPercentage,
             entropyAddress,
             msg.sender,
@@ -80,6 +86,7 @@ contract RaffleFactory is Ownable {
         
         emit RaffleCreated(
             address(raffle),
+            RaffleType.SingleWinner,
             projectPercentage,
             msg.sender
         );
@@ -189,13 +196,13 @@ contract RaffleFactory is Ownable {
      */
     function getRaffleInfo(uint256 index) external view returns (
         address raffleAddress,
-        ProjectRaffle.RaffleState state,
+        BaseRaffle.RaffleState state,
         uint256 totalTickets,
         uint256 participantCount
     ) {
         require(index < raffles.length, "Invalid index");
         
-        ProjectRaffle raffle = raffles[index];
+        BaseRaffle raffle = raffles[index];
         raffleAddress = address(raffle);
         state = raffle.state();
         totalTickets = raffle.totalTickets();

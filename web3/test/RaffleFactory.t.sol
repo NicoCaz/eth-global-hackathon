@@ -2,7 +2,8 @@
 pragma solidity ^0.8.28;
 
 import {RaffleFactory} from "../contracts/RaffleFactory.sol";
-import {ProjectRaffle} from "../contracts/ProjectRaffle.sol";
+import {BaseRaffle} from "../contracts/BaseRaffle.sol";
+import {SingleWinnerRaffle} from "../contracts/SingleWinnerRaffle.sol";
 import {MockEntropy} from "../contracts/test/MockEntropy.sol";
 
 contract RaffleFactoryTest {
@@ -28,9 +29,7 @@ contract RaffleFactoryTest {
     }
     
     function test_CreateRaffle() public {
-        address raffleAddress = factory.createRaffle(
-            "Test Project",
-            "Test Description",
+        address raffleAddress = factory.createSingleWinnerRaffle(
             PROJECT_PERCENTAGE,
             projectReceiver,
             RAFFLE_DURATION
@@ -40,24 +39,18 @@ contract RaffleFactoryTest {
         require(factory.getRaffleCount() == 1, "Should have 1 raffle");
         require(factory.isRaffle(raffleAddress) == true, "Should recognize raffle");
         
-        ProjectRaffle raffle = ProjectRaffle(raffleAddress);
-        require(keccak256(bytes(raffle.projectName())) == keccak256(bytes("Test Project")), "Wrong project name");
-        require(keccak256(bytes(raffle.projectDescription())) == keccak256(bytes("Test Description")), "Wrong description");
+        BaseRaffle raffle = BaseRaffle(raffleAddress);
         require(raffle.projectPercentage() == PROJECT_PERCENTAGE, "Wrong percentage");
     }
     
     function test_CreateMultipleRaffles() public {
-        address raffle1 = factory.createRaffle(
-            "Project 1",
-            "Desc 1",
+        address raffle1 = factory.createSingleWinnerRaffle(
             PROJECT_PERCENTAGE,
             projectReceiver,
             RAFFLE_DURATION
         );
         
-        address raffle2 = factory.createRaffle(
-            "Project 2",
-            "Desc 2",
+        address raffle2 = factory.createSingleWinnerRaffle(
             PROJECT_PERCENTAGE,
             projectReceiver,
             RAFFLE_DURATION
@@ -70,9 +63,7 @@ contract RaffleFactoryTest {
     }
     
     function test_GetRaffleInfo() public {
-        address raffleAddress = factory.createRaffle(
-            "Test Project",
-            "Test Description",
+        address raffleAddress = factory.createSingleWinnerRaffle(
             PROJECT_PERCENTAGE,
             projectReceiver,
             RAFFLE_DURATION
@@ -80,31 +71,25 @@ contract RaffleFactoryTest {
         
         (
             address infoAddress,
-            string memory name,
-            ProjectRaffle.RaffleState state,
+            BaseRaffle.RaffleState state,
             uint256 totalTickets,
             uint256 participantCount
         ) = factory.getRaffleInfo(0);
         
         require(infoAddress == raffleAddress, "Address should match");
-        require(keccak256(bytes(name)) == keccak256(bytes("Test Project")), "Name should match");
         require(uint256(state) == 0, "Should be Active");
         require(totalTickets == 0, "Should have 0 tickets");
         require(participantCount == 0, "Should have 0 participants");
     }
     
     function test_GetAllRaffles() public {
-        address raffle1 = factory.createRaffle(
-            "Project 1",
-            "Desc 1",
+        address raffle1 = factory.createSingleWinnerRaffle(
             PROJECT_PERCENTAGE,
             projectReceiver,
             RAFFLE_DURATION
         );
         
-        address raffle2 = factory.createRaffle(
-            "Project 2",
-            "Desc 2",
+        address raffle2 = factory.createSingleWinnerRaffle(
             PROJECT_PERCENTAGE,
             projectReceiver,
             RAFFLE_DURATION
@@ -118,17 +103,13 @@ contract RaffleFactoryTest {
     }
     
     function test_GetLatestRaffles() public {
-        address raffle1 = factory.createRaffle(
-            "Project 1",
-            "Desc 1",
+        address raffle1 = factory.createSingleWinnerRaffle(
             PROJECT_PERCENTAGE,
             projectReceiver,
             RAFFLE_DURATION
         );
         
-        address raffle2 = factory.createRaffle(
-            "Project 2",
-            "Desc 2",
+        address raffle2 = factory.createSingleWinnerRaffle(
             PROJECT_PERCENTAGE,
             projectReceiver,
             RAFFLE_DURATION

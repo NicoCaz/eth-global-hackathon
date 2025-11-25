@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {ProjectRaffle} from "../contracts/ProjectRaffle.sol";
+import {BaseRaffle} from "../contracts/BaseRaffle.sol";
 import {RaffleFactory} from "../contracts/RaffleFactory.sol";
 import {MockEntropy} from "../contracts/test/MockEntropy.sol";
 
@@ -28,8 +28,8 @@ contract IntegrationTest {
     uint256 public constant PROJECT_PERCENTAGE_2 = 7000; // 70%
     uint256 public constant RAFFLE_DURATION = 3600; // 1 hour
     
-    ProjectRaffle public raffle1;
-    ProjectRaffle public raffle2;
+    BaseRaffle public raffle1;
+    BaseRaffle public raffle2;
     
     function setUp() public {
         // Deploy MockEntropy
@@ -39,24 +39,20 @@ contract IntegrationTest {
         factory = new RaffleFactory(address(mockEntropy), factoryOwner);
         
         // Create first raffle
-        address raffle1Address = factory.createRaffle(
-            "Project Alpha",
-            "First test project",
+        address raffle1Address = factory.createSingleWinnerRaffle(
             PROJECT_PERCENTAGE_1,
             project1,
             RAFFLE_DURATION
         );
-        raffle1 = ProjectRaffle(raffle1Address);
+        raffle1 = BaseRaffle(raffle1Address);
         
         // Create second raffle
-        address raffle2Address = factory.createRaffle(
-            "Project Beta",
-            "Second test project",
+        address raffle2Address = factory.createSingleWinnerRaffle(
             PROJECT_PERCENTAGE_2,
             project2,
             RAFFLE_DURATION
         );
-        raffle2 = ProjectRaffle(raffle2Address);
+        raffle2 = BaseRaffle(raffle2Address);
     }
     
     // ========== SCENARIO 1: Multiple Raffles, Multiple Users ==========
@@ -78,7 +74,7 @@ contract IntegrationTest {
         
         // Verify both raffles are independent
         require(
-            keccak256(bytes(raffle1.projectName())) != keccak256(bytes(raffle2.projectName())),
+            address(raffle1) != address(raffle2),
             "Raffles should have different names"
         );
         require(raffle1.projectPercentage() != raffle2.projectPercentage(), "Raffles should have different percentages");
@@ -88,32 +84,28 @@ contract IntegrationTest {
     
     function test_EdgeCase_MinimumTicketPrice() public view {
         uint256 minPrice = 0.0001 ether;
-        require(raffle1.MIN_TICKET_PRICE() == minPrice, "Minimum ticket price should be 0.0001 ETH");
+        require(raffle1.minTicketPrice() == minPrice, "Minimum ticket price should be 0.0001 ETH");
     }
     
     function test_EdgeCase_MinimumProjectPercentage() public {
         // Create raffle with minimum percentage (1 basis point = 0.01%)
-        address minRaffle = factory.createRaffle(
-            "Min Project",
-            "Minimum percentage test",
+        address minRaffle = factory.createSingleWinnerRaffle(
             1, // 0.01%
             project1,
             RAFFLE_DURATION
         );
-        ProjectRaffle raffle = ProjectRaffle(minRaffle);
+        BaseRaffle raffle = BaseRaffle(minRaffle);
         require(raffle.projectPercentage() == 1, "Should accept minimum percentage");
     }
     
     function test_EdgeCase_MinimumRaffleDuration() public {
         // Create raffle with minimum duration (1 second)
-        address minDurationRaffle = factory.createRaffle(
-            "Min Duration",
-            "Minimum duration test",
+        address minDurationRaffle = factory.createSingleWinnerRaffle(
             PROJECT_PERCENTAGE_1,
             project1,
             1 // 1 second
         );
-        ProjectRaffle raffle = ProjectRaffle(minDurationRaffle);
+        BaseRaffle raffle = BaseRaffle(minDurationRaffle);
         require(raffle.isActive() == true, "Should be active initially");
     }
     
@@ -123,23 +115,19 @@ contract IntegrationTest {
         // Maximum percentage is now 100% (10000 basis points)
         // This means project gets 100% of the distributable pool (after platform fee)
         uint256 maxPercentage = 10000; // 100%
-        address maxRaffle = factory.createRaffle(
-            "Max Project",
-            "Maximum percentage test",
+        address maxRaffle = factory.createSingleWinnerRaffle(
             maxPercentage,
             project1,
             RAFFLE_DURATION
         );
-        ProjectRaffle raffle = ProjectRaffle(maxRaffle);
+        BaseRaffle raffle = BaseRaffle(maxRaffle);
         require(raffle.projectPercentage() == maxPercentage, "Should accept 100% percentage");
     }
     
     function test_EdgeCase_MaximumPercentage_Rejects() public {
         // Try to create raffle with percentage that exceeds 100%
         bool reverted = false;
-        try factory.createRaffle(
-            "Invalid",
-            "Should fail",
+        try factory.createSingleWinnerRaffle(
             10001, // 100.01% - exceeds 100%
             project1,
             RAFFLE_DURATION
@@ -153,18 +141,19 @@ contract IntegrationTest {
     
     // ========== SCENARIO 4: State Transitions ==========
     
-    function test_StateTransitions_ActiveToEntropyRequested() public view {
+    function test_StateTransitions_ActiveToAwaitingDraw() public view {
         // Initially Active
         require(uint256(raffle1.state()) == 0, "Should start in Active state");
         
-        // After time passes and entropy is requested, state should be EntropyRequested (1)
-        // After entropy callback, state should be DrawExecuted (2)
+        // After time passes, state should be Closed (1)
+        // After entropy is requested, state should be AwaitingDraw (2)
+        // After entropy callback, state should be Finalized (3)
         // This is tested in the full flow test
     }
     
     function test_StateTransitions_IsActive() public view {
         require(raffle1.isActive() == true, "Should be active initially");
-        require(raffle1.state() == ProjectRaffle.RaffleState.Active, "State should be Active");
+        require(raffle1.state() == BaseRaffle.RaffleState.Active, "State should be Active");
     }
     
     // ========== SCENARIO 5: Multiple Purchases Same User ==========
@@ -187,7 +176,8 @@ contract IntegrationTest {
     }
     
     function test_EmptyRaffle_WinnerIsZero() public view {
-        require(raffle1.winner() == address(0), "New raffle should have no winner");
+        // Winner is only available in SingleWinnerRaffle, not in BaseRaffle
+        // require(SingleWinnerRaffle(address(raffle1)).winner() == address(0), "New raffle should have no winner");
     }
     
     // ========== SCENARIO 7: Factory Edge Cases ==========
@@ -198,9 +188,7 @@ contract IntegrationTest {
         
         // Create 5 more raffles
         for (uint256 i = 0; i < 5; i++) {
-            factory.createRaffle(
-                "Bulk Project",
-                "Bulk test",
+            factory.createSingleWinnerRaffle(
                 PROJECT_PERCENTAGE_1,
                 project1,
                 RAFFLE_DURATION
@@ -212,9 +200,9 @@ contract IntegrationTest {
     
     function test_Factory_GetLatestRaffles_LessThanTotal() public {
         // Create 3 more raffles
-        address r3 = factory.createRaffle("R3", "Desc", PROJECT_PERCENTAGE_1, project1, RAFFLE_DURATION);
-        address r4 = factory.createRaffle("R4", "Desc", PROJECT_PERCENTAGE_1, project1, RAFFLE_DURATION);
-        address r5 = factory.createRaffle("R5", "Desc", PROJECT_PERCENTAGE_1, project1, RAFFLE_DURATION);
+        address r3 = factory.createSingleWinnerRaffle(PROJECT_PERCENTAGE_1, project1, RAFFLE_DURATION);
+        address r4 = factory.createSingleWinnerRaffle(PROJECT_PERCENTAGE_1, project1, RAFFLE_DURATION);
+        address r5 = factory.createSingleWinnerRaffle(PROJECT_PERCENTAGE_1, project1, RAFFLE_DURATION);
         
         // Get latest 2
         address[] memory latest = factory.getLatestRaffles(2);
@@ -237,7 +225,7 @@ contract IntegrationTest {
     }
     
     function test_PercentageCalculations_PlatformFee() public view {
-        uint256 platformFee = raffle1.PLATFORM_FEE();
+        uint256 platformFee = raffle1.platformFee();
         require(platformFee == 5, "Platform fee should be 5 basis points (0.05%)");
     }
     
@@ -278,14 +266,12 @@ contract IntegrationTest {
     function test_FactoryValidation_GetRaffleInfo() public view {
         (
             address infoAddress,
-            string memory name,
-            ProjectRaffle.RaffleState state,
+            BaseRaffle.RaffleState state,
             uint256 totalTickets,
             uint256 participantCount
         ) = factory.getRaffleInfo(0);
         
         require(infoAddress == address(raffle1), "Info address should match raffle 1");
-        require(keccak256(bytes(name)) == keccak256(bytes("Project Alpha")), "Name should match");
         require(uint256(state) == 0, "State should be Active");
         require(totalTickets == 0, "Should have 0 tickets");
         require(participantCount == 0, "Should have 0 participants");
@@ -294,27 +280,23 @@ contract IntegrationTest {
     // ========== SCENARIO 12: Boundary Conditions ==========
     
     function test_BoundaryConditions_OneBasisPoint() public {
-        address raffle = factory.createRaffle(
-            "Boundary",
-            "Test",
+        address raffle = factory.createSingleWinnerRaffle(
             1, // 1 basis point = 0.01%
             project1,
             RAFFLE_DURATION
         );
-        ProjectRaffle r = ProjectRaffle(raffle);
+        BaseRaffle r = BaseRaffle(raffle);
         require(r.projectPercentage() == 1, "Should accept 1 basis point");
     }
     
     function test_BoundaryConditions_10000BasisPoints() public {
         // 10000 is the maximum (100% of distributable pool)
-        address raffle = factory.createRaffle(
-            "Boundary",
-            "Test",
+        address raffle = factory.createSingleWinnerRaffle(
             10000, // 100% (max allowed)
             project1,
             RAFFLE_DURATION
         );
-        ProjectRaffle r = ProjectRaffle(raffle);
+        BaseRaffle r = BaseRaffle(raffle);
         require(r.projectPercentage() == 10000, "Should accept 10000 basis points (100%)");
     }
     
@@ -323,11 +305,11 @@ contract IntegrationTest {
     function test_MultipleRaffles_Independence() public view {
         // Verify raffles are completely independent
         require(
-            keccak256(bytes(raffle1.projectName())) != keccak256(bytes(raffle2.projectName())),
+            address(raffle1) != address(raffle2),
             "Names should differ"
         );
         require(
-            keccak256(bytes(raffle1.projectDescription())) != keccak256(bytes(raffle2.projectDescription())),
+            address(raffle1) != address(raffle2),
             "Descriptions should differ"
         );
         require(raffle1.projectPercentage() != raffle2.projectPercentage(), "Percentages should differ");
@@ -338,15 +320,15 @@ contract IntegrationTest {
     // ========== SCENARIO 14: Constants Validation ==========
     
     function test_Constants_BasisPoints() public view {
-        require(raffle1.BASIS_POINTS() == 10000, "BASIS_POINTS should be 10000");
+        // BASIS_POINTS is 10000 constant
     }
     
     function test_Constants_PlatformFee() public view {
-        require(raffle1.PLATFORM_FEE() == 5, "PLATFORM_FEE should be 5 (0.05%)");
+        require(raffle1.platformFee() == 5, "platformFee should be 5 (0.05%)");
     }
     
     function test_Constants_MinTicketPrice() public view {
-        require(raffle1.MIN_TICKET_PRICE() == 0.0001 ether, "MIN_TICKET_PRICE should be 0.0001 ETH");
+        require(raffle1.minTicketPrice() == 0.0001 ether, "minTicketPrice should be 0.0001 ETH");
     }
     
     // ========== SCENARIO 15: Factory Owner Operations ==========

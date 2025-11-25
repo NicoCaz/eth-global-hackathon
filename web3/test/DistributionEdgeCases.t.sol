@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {ProjectRaffle} from "../contracts/ProjectRaffle.sol";
+import {BaseRaffle} from "../contracts/BaseRaffle.sol";
 import {RaffleFactory} from "../contracts/RaffleFactory.sol";
 import {MockEntropy} from "../contracts/test/MockEntropy.sol";
 
@@ -28,28 +28,24 @@ contract DistributionEdgeCasesTest {
     
     function test_ProjectCanReceive100Percent() public {
         // Create raffle with 100% for project
-        address raffleAddress = factory.createRaffle(
-            "100% Project",
-            "Project gets everything",
+        address raffleAddress = factory.createSingleWinnerRaffle(
             10000, // 100%
             project,
             RAFFLE_DURATION
         );
-        ProjectRaffle raffle = ProjectRaffle(raffleAddress);
+        BaseRaffle raffle = BaseRaffle(raffleAddress);
         
         require(raffle.projectPercentage() == 10000, "Should accept 100%");
     }
     
     function test_Distribution_100PercentProject_ZeroWinner() public {
         // Create raffle with 100% for project to verify it's allowed
-        address raffleAddress = factory.createRaffle(
-            "100% Test",
-            "Test",
+        address raffleAddress = factory.createSingleWinnerRaffle(
             10000, // 100%
             project,
             RAFFLE_DURATION
         );
-        ProjectRaffle raffle = ProjectRaffle(raffleAddress);
+        BaseRaffle raffle = BaseRaffle(raffleAddress);
         
         // Verify the math:
         // If totalBalance = 100 ETH
@@ -59,20 +55,17 @@ contract DistributionEdgeCasesTest {
         // Winner gets = 99.995 - 99.995 = 0 ETH (0% for winner)
         
         require(raffle.projectPercentage() == 10000, "Should be 100%");
-        require(raffle.PLATFORM_FEE() == 5, "Platform fee should be 5 basis points (0.05%)");
-        require(raffle.BASIS_POINTS() == 10000, "BASIS_POINTS should be 10000");
+        require(raffle.platformFee() == 5, "Platform fee should be 5 basis points (0.05%)");
     }
     
     function test_Distribution_50PercentProject_50PercentWinner() public {
         // Create raffle with 50% for project
-        address raffleAddress = factory.createRaffle(
-            "50% Test",
-            "Test",
+        address raffleAddress = factory.createSingleWinnerRaffle(
             5000, // 50%
             project,
             RAFFLE_DURATION
         );
-        ProjectRaffle raffle = ProjectRaffle(raffleAddress);
+        BaseRaffle raffle = BaseRaffle(raffleAddress);
         
         // If projectPercentage = 5000 (50%)
         // Project gets = distributablePool * 5000 / 10000 = 50% of pool
@@ -84,14 +77,12 @@ contract DistributionEdgeCasesTest {
     function test_Distribution_0PercentProject_100PercentWinner() public {
         // Minimum is 1 basis point (0.01%), so 0% is not allowed
         // But we can test with minimum (1 basis point)
-        address raffleAddress = factory.createRaffle(
-            "Min Project",
-            "Minimum percentage",
+        address raffleAddress = factory.createSingleWinnerRaffle(
             1, // 0.01% (minimum)
             project,
             RAFFLE_DURATION
         );
-        ProjectRaffle raffle = ProjectRaffle(raffleAddress);
+        BaseRaffle raffle = BaseRaffle(raffleAddress);
         
         require(raffle.projectPercentage() == 1, "Should accept minimum 1 basis point");
     }
@@ -103,36 +94,34 @@ contract DistributionEdgeCasesTest {
         // 2. Project percentage from remaining pool
         // 3. Winner gets the rest
         
-        address raffleAddress = factory.createRaffle(
-            "Fee Test",
-            "Test",
+        address raffleAddress = factory.createSingleWinnerRaffle(
             5000,
             project,
             RAFFLE_DURATION
         );
-        ProjectRaffle raffle = ProjectRaffle(raffleAddress);
+        BaseRaffle raffle = BaseRaffle(raffleAddress);
         
         // Verify platform fee constant
-        require(raffle.PLATFORM_FEE() == 5, "Platform fee should be 5 basis points (0.05%)");
+        require(raffle.platformFee() == 5, "Platform fee should be 5 basis points (0.05%)");
     }
     
     function test_ProjectPercentage_Range() public {
         // Test minimum (1 basis point)
-        address minRaffle = factory.createRaffle("Min", "Test", 1, project, RAFFLE_DURATION);
-        require(ProjectRaffle(minRaffle).projectPercentage() == 1, "Min should be 1");
+        address minRaffle = factory.createSingleWinnerRaffle(1, project, RAFFLE_DURATION);
+        require(BaseRaffle(minRaffle).projectPercentage() == 1, "Min should be 1");
         
         // Test maximum (10000 basis points = 100%)
-        address maxRaffle = factory.createRaffle("Max", "Test", 10000, project, RAFFLE_DURATION);
-        require(ProjectRaffle(maxRaffle).projectPercentage() == 10000, "Max should be 10000");
+        address maxRaffle = factory.createSingleWinnerRaffle(10000, project, RAFFLE_DURATION);
+        require(BaseRaffle(maxRaffle).projectPercentage() == 10000, "Max should be 10000");
         
         // Test middle (5000 basis points = 50%)
-        address midRaffle = factory.createRaffle("Mid", "Test", 5000, project, RAFFLE_DURATION);
-        require(ProjectRaffle(midRaffle).projectPercentage() == 5000, "Mid should be 5000");
+        address midRaffle = factory.createSingleWinnerRaffle(5000, project, RAFFLE_DURATION);
+        require(BaseRaffle(midRaffle).projectPercentage() == 5000, "Mid should be 5000");
     }
     
     function test_ProjectPercentage_RejectsZero() public {
         bool reverted = false;
-        try factory.createRaffle("Test", "Test", 0, project, RAFFLE_DURATION) {
+        try factory.createSingleWinnerRaffle(0, project, RAFFLE_DURATION) {
             // Should not reach here
         } catch {
             reverted = true;
@@ -142,7 +131,7 @@ contract DistributionEdgeCasesTest {
     
     function test_ProjectPercentage_RejectsOver100() public {
         bool reverted = false;
-        try factory.createRaffle("Test", "Test", 10001, project, RAFFLE_DURATION) {
+        try factory.createSingleWinnerRaffle(10001, project, RAFFLE_DURATION) {
             // Should not reach here
         } catch {
             reverted = true;

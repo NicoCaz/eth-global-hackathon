@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {ProjectRaffle} from "../contracts/ProjectRaffle.sol";
+import {BaseRaffle} from "../contracts/BaseRaffle.sol";
+import {SingleWinnerRaffle} from "../contracts/SingleWinnerRaffle.sol";
 import {RaffleFactory} from "../contracts/RaffleFactory.sol";
 import {MockEntropy} from "../contracts/test/MockEntropy.sol";
 
@@ -21,21 +22,19 @@ contract FundDistributionTest {
     uint256 public constant PROJECT_PERCENTAGE = 5000; // 50%
     uint256 public constant RAFFLE_DURATION = 60;
     
-    ProjectRaffle public raffle;
+    BaseRaffle public raffle;
     
     function setUp() public {
         mockEntropy = new MockEntropy(factoryOwner, 0.0001 ether);
         factory = new RaffleFactory(address(mockEntropy), factoryOwner);
         
-        address raffleAddress = factory.createRaffle(
-            "Test Project",
-            "Test Description",
+        address raffleAddress = factory.createSingleWinnerRaffle(
             PROJECT_PERCENTAGE,
             project,
             RAFFLE_DURATION
         );
         
-        raffle = ProjectRaffle(raffleAddress);
+        raffle = BaseRaffle(raffleAddress);
     }
     
     // Helper function to calculate expected distribution amounts
@@ -66,8 +65,8 @@ contract FundDistributionTest {
             _calculateDistribution(
                 totalContributed,
                 raffle.projectPercentage(),
-                raffle.PLATFORM_FEE(),
-                raffle.BASIS_POINTS()
+                raffle.platformFee(),
+                10000
             );
         
         // Verify calculations
@@ -99,14 +98,12 @@ contract FundDistributionTest {
     
     function test_DistributionMath_100PercentProject_ZeroWinner() public {
         // Create raffle with 100% for project
-        address raffle100Address = factory.createRaffle(
-            "100% Project",
-            "Test",
+        address raffle100Address = factory.createSingleWinnerRaffle(
             10000, // 100%
             project,
             RAFFLE_DURATION
         );
-        ProjectRaffle raffle100 = ProjectRaffle(raffle100Address);
+        BaseRaffle raffle100 = BaseRaffle(raffle100Address);
         
         uint256 contribution = 1 ether;
         
@@ -115,8 +112,8 @@ contract FundDistributionTest {
             _calculateDistribution(
                 contribution,
                 raffle100.projectPercentage(),
-                raffle100.PLATFORM_FEE(),
-                raffle100.BASIS_POINTS()
+                raffle100.platformFee(),
+                10000
             );
         
         // Platform: 1 ETH * 5 / 10000 = 0.0005 ETH (0.05%)
@@ -142,14 +139,12 @@ contract FundDistributionTest {
     
     function test_DistributionMath_MinimumProjectPercentage() public {
         // Create raffle with minimum percentage
-        address raffleMinAddress = factory.createRaffle(
-            "Min Project",
-            "Test",
+        address raffleMinAddress = factory.createSingleWinnerRaffle(
             1, // 0.01%
             project,
             RAFFLE_DURATION
         );
-        ProjectRaffle raffleMin = ProjectRaffle(raffleMinAddress);
+        BaseRaffle raffleMin = BaseRaffle(raffleMinAddress);
         
         uint256 contribution = 1 ether;
         
@@ -158,8 +153,8 @@ contract FundDistributionTest {
             _calculateDistribution(
                 contribution,
                 raffleMin.projectPercentage(),
-                raffleMin.PLATFORM_FEE(),
-                raffleMin.BASIS_POINTS()
+                raffleMin.platformFee(),
+                10000
             );
         
         // Platform: 0.05%
@@ -183,24 +178,20 @@ contract FundDistributionTest {
     
     function test_DistributionMath_DifferentPercentages() public {
         // Test 30% project
-        address raffle30Address = factory.createRaffle(
-            "30% Project",
-            "Test",
+        address raffle30Address = factory.createSingleWinnerRaffle(
             3000, // 30%
             project,
             RAFFLE_DURATION
         );
-        ProjectRaffle raffle30 = ProjectRaffle(raffle30Address);
+        BaseRaffle raffle30 = BaseRaffle(raffle30Address);
         
         // Test 70% project
-        address raffle70Address = factory.createRaffle(
-            "70% Project",
-            "Test",
+        address raffle70Address = factory.createSingleWinnerRaffle(
             7000, // 70%
             project,
             RAFFLE_DURATION
         );
-        ProjectRaffle raffle70 = ProjectRaffle(raffle70Address);
+        BaseRaffle raffle70 = BaseRaffle(raffle70Address);
         
         uint256 contribution = 1 ether;
         
@@ -209,8 +200,8 @@ contract FundDistributionTest {
             _calculateDistribution(
                 contribution,
                 raffle30.projectPercentage(),
-                raffle30.PLATFORM_FEE(),
-                raffle30.BASIS_POINTS()
+                raffle30.platformFee(),
+                10000
             );
         
         // Calculate for 70% raffle
@@ -218,8 +209,8 @@ contract FundDistributionTest {
             _calculateDistribution(
                 contribution,
                 raffle70.projectPercentage(),
-                raffle70.PLATFORM_FEE(),
-                raffle70.BASIS_POINTS()
+                raffle70.platformFee(),
+                10000
             );
         
         // Platform fee should be same for both
@@ -246,8 +237,8 @@ contract FundDistributionTest {
             _calculateDistribution(
                 largeAmount,
                 raffle.projectPercentage(),
-                raffle.PLATFORM_FEE(),
-                raffle.BASIS_POINTS()
+                raffle.platformFee(),
+                10000
             );
         
         // Platform: 1000 ETH * 5 / 10000 = 0.5 ETH
@@ -284,13 +275,13 @@ contract FundDistributionTest {
             _calculateDistribution(
                 smallAmount,
                 raffle.projectPercentage(),
-                raffle.PLATFORM_FEE(),
-                raffle.BASIS_POINTS()
+                raffle.platformFee(),
+                10000
             );
         
         // Verify calculations match the helper function logic
-        uint256 platformFee = raffle.PLATFORM_FEE();
-        uint256 basisPoints = raffle.BASIS_POINTS();
+        uint256 platformFee = raffle.platformFee();
+        uint256 basisPoints = 10000; // BASIS_POINTS constant
         uint256 projectPct = raffle.projectPercentage();
         
         // Calculate manually
@@ -314,8 +305,8 @@ contract FundDistributionTest {
     
     function test_DistributionConstants() public view {
         // Verify constants
-        require(raffle.PLATFORM_FEE() == 5, "PLATFORM_FEE should be 5 basis points (0.05%)");
-        require(raffle.BASIS_POINTS() == 10000, "BASIS_POINTS should be 10000");
+        require(raffle.platformFee() == 5, "platformFee should be 5 basis points (0.05%)");
+        // BASIS_POINTS is 10000 constant
         require(raffle.projectPercentage() == PROJECT_PERCENTAGE, "Project percentage should match");
     }
     
@@ -329,8 +320,8 @@ contract FundDistributionTest {
             _calculateDistribution(
                 amount,
                 raffle.projectPercentage(),
-                raffle.PLATFORM_FEE(),
-                raffle.BASIS_POINTS()
+                raffle.platformFee(),
+                10000
             );
         
         // Verify that total distribution doesn't exceed original amount
