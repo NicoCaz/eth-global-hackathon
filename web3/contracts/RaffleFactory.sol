@@ -6,24 +6,17 @@ import "./ProjectRaffle.sol";
 
 /**
  * @title RaffleFactory
- * @notice Factory contract para crear múltiples rifas de proyectos
- * @dev Solo el owner puede crear nuevas rifas
+ * @notice Factory contract for creating and managing multiple project raffles
+ * @dev Centralizes raffle deployment with configurable platform parameters
  */
 contract RaffleFactory is Ownable {
-    // Array de todas las rifas creadas
     ProjectRaffle[] public raffles;
-    // Mapping para verificar si una dirección es una rifa creada por este factory
     mapping(address => bool) public isRaffle;
     
-    // Configuración de Pyth Entropy
     address public entropyAddress;
-    
-    // Parámetros configurables para nuevas rifas
-    uint256 public platformFee; // Fee de plataforma en basis points (5 = 0.05%)
-    uint256 public minTicketPrice; // Precio mínimo del ticket en wei
-    uint32 public entropyCallbackGasLimit; // Límite de gas para callback de Entropy
-    
-    // Eventos
+    uint256 public platformFee;
+    uint256 public minTicketPrice;
+    uint32 public entropyCallbackGasLimit;    
     event RaffleCreated(
         address indexed raffleAddress,
         uint256 projectPercentage,
@@ -35,9 +28,9 @@ contract RaffleFactory is Ownable {
     event EntropyGasLimitUpdated(uint32 newLimit);
     
     /**
-     * @notice Constructor del factory
-     * @param _entropyAddress Dirección del contrato de Pyth Entropy
-     * @param _initialOwner Dirección del owner inicial
+     * @notice Initializes the factory with Pyth Entropy configuration
+     * @param _entropyAddress Pyth Entropy contract address
+     * @param _initialOwner Initial owner address
      */
     constructor(
         address _entropyAddress,
@@ -48,17 +41,17 @@ contract RaffleFactory is Ownable {
         entropyAddress = _entropyAddress;
         _transferOwnership(_initialOwner);
         
-        platformFee = 5; // 0.05%
+        platformFee = 5;
         minTicketPrice = 0.0001 ether;
         entropyCallbackGasLimit = 100000;
     }
     
     /**
-     * @notice Crea una nueva rifa
-     * @param projectPercentage Porcentaje para el proyecto (Basis Points: 5000 = 50%)
-     * @param projectAddress Dirección del proyecto que recibirá fondos
-     * @param raffleDuration Duración de la rifa en segundos
-     * @return Dirección del contrato de rifa creado
+     * @notice Creates a new project raffle
+     * @param projectPercentage Project allocation in basis points (5000 = 50%)
+     * @param projectAddress Project address that will receive funds
+     * @param raffleDuration Raffle duration in seconds
+     * @return Address of the created raffle contract
      */
     function createRaffle(
         uint256 projectPercentage,
@@ -70,12 +63,11 @@ contract RaffleFactory is Ownable {
         require(projectAddress != address(0), "Invalid project address");
         require(raffleDuration > 0, "Duration must be > 0");
         
-        // Crear nueva instancia de ProjectRaffle
         ProjectRaffle raffle = new ProjectRaffle(
             projectPercentage,
             entropyAddress,
-            msg.sender, // El creador de la rifa es el owner
-            owner(), // El admin de la plataforma es el owner del factory
+            msg.sender,
+            owner(),
             projectAddress,
             raffleDuration,
             platformFee,
@@ -83,7 +75,6 @@ contract RaffleFactory is Ownable {
             entropyCallbackGasLimit
         );
         
-        // Registrar la rifa
         raffles.push(raffle);
         isRaffle[address(raffle)] = true;
         
@@ -97,8 +88,8 @@ contract RaffleFactory is Ownable {
     }
     
     /**
-     * @notice Actualiza la configuración de Entropy
-     * @param _entropyAddress Nueva dirección del contrato de Entropy
+     * @notice Updates the Entropy contract configuration for new raffles
+     * @param _entropyAddress New Entropy contract address
      */
     function updateEntropyConfig(
         address _entropyAddress
@@ -110,18 +101,18 @@ contract RaffleFactory is Ownable {
     }
     
     /**
-     * @notice Actualiza la fee de la plataforma para nuevas rifas
-     * @param _platformFee Nueva fee en basis points (ej: 5 = 0.05%)
+     * @notice Updates the platform fee for new raffles
+     * @param _platformFee New fee in basis points (e.g., 5 = 0.05%)
      */
     function updatePlatformFee(uint256 _platformFee) external onlyOwner {
-        require(_platformFee <= 1000, "Fee cannot exceed 10%"); // Máximo 10%
+        require(_platformFee <= 1000, "Fee cannot exceed 10%");
         platformFee = _platformFee;
         emit PlatformFeeUpdated(_platformFee);
     }
     
     /**
-     * @notice Actualiza el precio mínimo del ticket para nuevas rifas
-     * @param _minTicketPrice Nuevo precio mínimo en wei
+     * @notice Updates the minimum ticket price for new raffles
+     * @param _minTicketPrice New minimum price in wei
      */
     function updateMinTicketPrice(uint256 _minTicketPrice) external onlyOwner {
         require(_minTicketPrice > 0, "Price must be > 0");
@@ -130,30 +121,30 @@ contract RaffleFactory is Ownable {
     }
     
     /**
-     * @notice Actualiza el límite de gas para el callback de Entropy en nuevas rifas
-     * @param _gasLimit Nuevo límite de gas
+     * @notice Updates the Entropy callback gas limit for new raffles
+     * @param _gasLimit New gas limit
      */
     function updateEntropyGasLimit(uint32 _gasLimit) external onlyOwner {
-        require(_gasLimit >= 50000, "Gas limit too low"); // Mínimo razonable
-        require(_gasLimit <= 500000, "Gas limit too high"); // Máximo razonable
+        require(_gasLimit >= 50000, "Gas limit too low");
+        require(_gasLimit <= 500000, "Gas limit too high");
         entropyCallbackGasLimit = _gasLimit;
         emit EntropyGasLimitUpdated(_gasLimit);
     }
     
     /**
-     * @notice Obtiene el número total de rifas creadas
-     * @return Cantidad de rifas
+     * @notice Returns the total number of raffles created
+     * @return Total raffle count
      */
     function getRaffleCount() external view returns (uint256) {
         return raffles.length;
     }
     
     /**
-     * @notice Obtiene todas las direcciones de las rifas creadas (paginado)
-     * @param offset Índice inicial (0-based)
-     * @param limit Número máximo de rifas a devolver
-     * @return Array de direcciones de rifas
-     * @return hasMore Indica si hay más rifas después de esta página
+     * @notice Returns paginated list of raffle addresses
+     * @param offset Starting index (0-based)
+     * @param limit Maximum number of raffles to return
+     * @return Array of raffle addresses
+     * @return hasMore Indicates if more raffles exist after this page
      */
     function getAllRaffles(uint256 offset, uint256 limit) external view returns (
         address[] memory,
@@ -179,9 +170,9 @@ contract RaffleFactory is Ownable {
     }
     
     /**
-     * @notice Obtiene información básica de una rifa específica (solo dirección)
-     * @param index Índice de la rifa
-     * @return raffleAddress Dirección del contrato de rifa
+     * @notice Returns the address of a specific raffle by index
+     * @param index Raffle index
+     * @return raffleAddress Address of the raffle contract
      */
     function getRaffleAddress(uint256 index) external view returns (address raffleAddress) {
         require(index < raffles.length, "Invalid index");
@@ -189,12 +180,12 @@ contract RaffleFactory is Ownable {
     }
     
     /**
-     * @notice Obtiene información completa de una rifa específica
-     * @param index Índice de la rifa
-     * @return raffleAddress Dirección del contrato de rifa
-     * @return state Estado actual de la rifa
-     * @return totalTickets Total de tickets vendidos
-     * @return participantCount Número de participantes
+     * @notice Returns complete information for a specific raffle
+     * @param index Raffle index
+     * @return raffleAddress Address of the raffle contract
+     * @return state Current state of the raffle
+     * @return totalTickets Total tickets sold
+     * @return participantCount Number of participants
      */
     function getRaffleInfo(uint256 index) external view returns (
         address raffleAddress,
@@ -212,9 +203,9 @@ contract RaffleFactory is Ownable {
     }
     
     /**
-     * @notice Obtiene información básica de múltiples rifas (optimizado)
-     * @param indices Array de índices de las rifas
-     * @return raffleAddresses Array de direcciones de rifas
+     * @notice Returns addresses for multiple raffles by indices (optimized batch query)
+     * @param indices Array of raffle indices
+     * @return raffleAddresses Array of raffle addresses
      */
     function getRaffleAddresses(uint256[] calldata indices) external view returns (
         address[] memory raffleAddresses
@@ -230,9 +221,9 @@ contract RaffleFactory is Ownable {
     }
     
     /**
-     * @notice Obtiene las últimas N rifas creadas (optimizado)
-     * @param count Número de rifas a obtener
-     * @return Array de direcciones de las últimas rifas
+     * @notice Returns the most recently created raffles
+     * @param count Number of raffles to retrieve
+     * @return Array of addresses for the latest raffles
      */
     function getLatestRaffles(uint256 count) external view returns (address[] memory) {
         uint256 total = raffles.length;
@@ -243,7 +234,6 @@ contract RaffleFactory is Ownable {
         uint256 actualCount = count > total ? total : count;
         address[] memory result = new address[](actualCount);
         
-        // Iterar desde el final hacia atrás (más eficiente)
         uint256 startIndex = total - actualCount;
         for (uint256 i = 0; i < actualCount; i++) {
             result[i] = address(raffles[startIndex + i]);

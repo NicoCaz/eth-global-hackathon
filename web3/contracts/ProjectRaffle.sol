@@ -9,24 +9,20 @@ import { IEntropyConsumer } from "@pythnetwork/entropy-sdk-solidity/IEntropyCons
  
 /**
  * @title ProjectRaffle
- * @notice Contrato de rifa para proyectos con integración de Pyth Entropy
- * @dev Los fondos se distribuyen entre: proyecto, owner (mantenimiento), y ganador
- * @dev Usa PullPayment para seguridad y Binary Search para eficiencia
+ * @notice Project raffle contract with Pyth Entropy integration for provably fair randomness
+ * @dev Funds are distributed between project, platform admin, and winner using PullPayment pattern
+ * @dev Uses binary search for O(log n) winner selection efficiency
  */
 contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsumer {
-    // Configuración de gas para el callback de Pyth Entropy
     uint32 public entropyCallbackGasLimit;
-    // proyect configuration    
-    uint256 public projectPercentage; // Porcentaje para el proyecto (Basis Points: 100 = 1%)
+    uint256 public projectPercentage;
     uint256 public constant BASIS_POINTS = 10000;
-    uint256 public platformFee; // Fee de plataforma (basis points)
-    uint256 public minTicketPrice; // Precio mínimo del ticket en wei
+    uint256 public platformFee;
+    uint256 public minTicketPrice;
     
-    // Estado de la rifa
     enum RaffleState { Active, EntropyRequested, DrawExecuted }
     RaffleState public state;
     
-    // Participantes y tickets
     struct TicketRange {
         address owner;
         uint256 upperBound;
@@ -34,23 +30,18 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
     TicketRange[] public participants;
     uint256 public totalTickets;
     
-    
-    // Ganador y distribución
     address public winner;
     bool public fundsDistributed;
     
-    // Control de tiempo
     uint256 public immutable raffleDuration;
     uint256 public immutable raffleStartTime;
-    address public projectAddress; // Dirección del proyecto guardada al crear la rifa
-    address public platformAdmin; // Administrador de la plataforma
+    address public projectAddress;
+    address public platformAdmin;
     
-    // Pyth Entropy
     IEntropyV2 public entropy;
     address public entropyProvider;
     uint64 public entropySequenceNumber;
     
-    // Eventos
     event TicketPurchased(address indexed buyer, uint256 amount, uint256 ticketCount);
     event EntropyRequested(uint64 sequenceNumber);
     event DrawExecuted(address indexed winner, uint256 ticketNumber);
@@ -64,16 +55,16 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
     );
     
     /**
-     * @notice Constructor del contrato
-     * @param _projectPercentage Porcentaje del proyecto en basis points (0-10000)
-     * @param _entropyAddress Dirección del contrato de Pyth Entropy
-     * @param _initialOwner Dirección del owner inicial
-     * @param _platformAdmin Dirección del administrador de la plataforma
-     * @param _projectAddress Dirección del proyecto que recibirá fondos
-     * @param _raffleDuration Duración de la rifa en segundos
-     * @param _platformFee Fee de la plataforma en basis points
-     * @param _minTicketPrice Precio mínimo del ticket en wei
-     * @param _entropyCallbackGasLimit Límite de gas para el callback de Entropy
+     * @notice Initializes the raffle contract with project and platform configuration
+     * @param _projectPercentage Project allocation in basis points (0-10000)
+     * @param _entropyAddress Pyth Entropy contract address
+     * @param _initialOwner Initial owner address
+     * @param _platformAdmin Platform administrator address
+     * @param _projectAddress Project address that will receive funds
+     * @param _raffleDuration Raffle duration in seconds
+     * @param _platformFee Platform fee in basis points
+     * @param _minTicketPrice Minimum ticket purchase amount in wei
+     * @param _entropyCallbackGasLimit Gas limit for Entropy callback execution
      */
     constructor(
         uint256 _projectPercentage,
@@ -107,7 +98,6 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
         minTicketPrice = _minTicketPrice;
         entropyCallbackGasLimit = _entropyCallbackGasLimit;
         
-        // Obtener proveedor por defecto de Pyth
         entropyProvider = entropy.getDefaultProvider();
         require(entropyProvider != address(0), "No default provider available");
         
@@ -116,8 +106,8 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
     }
     
     /**
-     * @notice Permite a los usuarios comprar tickets
-     * @dev 1 wei = 1 ticket
+     * @notice Allows users to purchase raffle tickets
+     * @dev 1 wei = 1 ticket, minimum purchase enforced by minTicketPrice
      */
     function buyTickets() external payable {
         require(state == RaffleState.Active, "Raffle not active");
@@ -126,14 +116,12 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
         
         totalTickets += msg.value;
         
-        // Guardar rango de tickets para este usuario
-        // El límite superior es el nuevo total de tickets
         participants.push(TicketRange({
             owner: msg.sender,
             upperBound: totalTickets
         }));
         
-        emit TicketPurchased(msg.sender, msg.value, totalTickets); // Emitimos total acumulado
+        emit TicketPurchased(msg.sender, msg.value, totalTickets);
     }
     
     modifier onlyOwnerOrAdmin() {
@@ -142,23 +130,20 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
     }
     
     /**
-     * @notice Solicita entropía a Pyth para ejecutar el sorteo
-     * @dev Solo el owner o admin puede ejecutar esta función
-     * @param userRandomNumber Número aleatorio generado por el usuario
+     * @notice Requests entropy from Pyth to execute the raffle draw
+     * @dev Only owner or platform admin can execute this function
+     * @param userRandomNumber User-generated random number for additional entropy
      */
     function requestEntropy(bytes32 userRandomNumber) external payable onlyOwnerOrAdmin {
         require(state == RaffleState.Active, "Raffle not active");
-        // require(block.timestamp >= raffleStartTime + raffleDuration, "Raffle still active"); // Comentado para permitir cierre anticipado
         require(totalTickets > 0, "No tickets sold");
         require(participants.length > 0, "No participants");
         
         state = RaffleState.EntropyRequested;
         
-        // Obtener el fee necesario para la solicitud (V2 API)
         uint128 fee = entropy.getFeeV2(entropyProvider, entropyCallbackGasLimit);
         require(msg.value >= fee, "Insufficient fee");
         
-        // Solicitar entropía a Pyth usando V2 API
         entropySequenceNumber = entropy.requestV2{value: fee}(
             entropyProvider,
             userRandomNumber,
@@ -167,18 +152,17 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
         
         emit EntropyRequested(entropySequenceNumber);
         
-        // Devolver exceso de fondos si los hay
         if (msg.value > fee) {
             payable(msg.sender).transfer(msg.value - fee);
         }
     }
     
     /**
-     * @notice Callback interno de Pyth con la entropía generada
-     * @dev Esta función será llamada por _entropyCallback del abstract contract IEntropyConsumer
-     * @param sequenceNumber Número de secuencia de la solicitud
-     * @param provider Dirección del proveedor
-     * @param randomNumber Número aleatorio generado
+     * @notice Internal callback invoked by Pyth Entropy with generated randomness
+     * @dev Called by _entropyCallback from IEntropyConsumer abstract contract
+     * @param sequenceNumber Sequence number of the entropy request
+     * @param provider Provider address that fulfilled the request
+     * @param randomNumber Generated random number
      */
     function entropyCallback(
         uint64 sequenceNumber,
@@ -189,7 +173,6 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
         require(sequenceNumber == entropySequenceNumber, "Invalid sequence number");
         require(provider == entropyProvider, "Invalid provider");
         
-        // Seleccionar ganador
         winner = _selectWinner(randomNumber);
         state = RaffleState.DrawExecuted;
         
@@ -197,26 +180,26 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
     }
     
     /**
-     * @notice Obtiene la dirección del contrato de Entropy (interno)
-     * @return Dirección del contrato de Entropy
-     * @dev Implementación requerida por IEntropyConsumer abstract contract
+     * @notice Returns the Entropy contract address (internal implementation)
+     * @return Address of the Entropy contract
+     * @dev Required implementation by IEntropyConsumer abstract contract
      */
     function getEntropy() internal view override returns (address) {
         return address(entropy);
     }
     
     /**
-     * @notice Obtiene la dirección del contrato de Entropy (público)
-     * @return Dirección del contrato de Entropy
-     * @dev Método público para consultar la dirección de Entropy desde fuera del contrato
+     * @notice Returns the Entropy contract address (public view)
+     * @return Address of the Entropy contract
+     * @dev Public method to query Entropy address from external contracts
      */
     function getEntropyAddress() external view returns (address) {
         return address(entropy);
     }
     
     /**
-     * @notice Distribuye los fondos entre proyecto, owner y ganador usando PullPayment
-     * @dev Los beneficiarios deben llamar a withdrawPayments() para retirar sus fondos
+     * @notice Distributes funds between project, platform admin, and winner using PullPayment pattern
+     * @dev Beneficiaries must call withdrawPayments() to withdraw their allocated funds
      */
     function distributeFunds() external onlyOwnerOrAdmin nonReentrant {
         require(state == RaffleState.DrawExecuted, "Draw not executed");
@@ -228,22 +211,13 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
         
         uint256 totalBalance = address(this).balance;
         
-        // Calcular distribución (Base 10000)
-        // Fee de plataforma (configurable)
         uint256 platformAmount = (totalBalance * platformFee) / BASIS_POINTS;
-        
-        // El resto del pozo se divide entre proyecto y ganador
         uint256 distributablePool = totalBalance - platformAmount;
-        
-        // Porcentaje para el proyecto sobre el pozo restante
         uint256 projectAmount = (distributablePool * projectPercentage) / BASIS_POINTS;
-        
-        // El resto va al ganador
         uint256 winnerAmount = distributablePool - projectAmount;
         
-        // Registrar pagos pendientes (patrón pull payment - más seguro)
         _asyncTransfer(projectAddress, projectAmount);
-        _asyncTransfer(platformAdmin, platformAmount); // Paga al admin de la plataforma
+        _asyncTransfer(platformAdmin, platformAmount);
         _asyncTransfer(winner, winnerAmount);
         
         emit FundsDistributed(
@@ -257,30 +231,26 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
     }
     
     /**
-     * @notice Selecciona el ganador usando Binary Search - O(log n)
-     * @param entropySeed Entropía generada por Pyth
-     * @return Dirección del ganador
+     * @notice Selects winner using binary search algorithm - O(log n) complexity
+     * @param entropySeed Entropy generated by Pyth
+     * @return Address of the winner
+     * @dev Each TicketRange covers tickets from (previousUpperBound) to (upperBound - 1)
+     * @dev First range covers tickets from 0 to (upperBound - 1)
      */
     function _selectWinner(bytes32 entropySeed) internal view returns (address) {
         require(participants.length > 0, "No participants");
         
-        // Usar entropía de Pyth para seleccionar ticket ganador
-        // El randomTicket está entre 0 y totalTickets - 1
         uint256 randomTicket = uint256(entropySeed) % totalTickets;
         
-        // Binary search en array de participants (buscando upperBound) - O(log n)
         uint256 left = 0;
         uint256 right = participants.length - 1;
         
         while (left < right) {
             uint256 mid = (left + right) / 2;
             
-            // Si randomTicket es menor que el límite superior de este rango,
-            // el ganador podría ser este o uno anterior.
-            if (participants[mid].upperBound > randomTicket) {
+            if (randomTicket < participants[mid].upperBound) {
                 right = mid;
             } else {
-                // Si randomTicket es >= upperBound, el ganador está después
                 left = mid + 1;
             }
         }
@@ -289,29 +259,35 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
     }
     
     /**
-     * @notice Obtiene el array de participantes
-     * @return Array de direcciones de participantes
+     * @notice Returns the total number of participant entries
+     * @return Number of ticket purchase transactions
      */
     function getParticipantsCount() external view returns (uint256) {
         return participants.length;
     }
     
+    /**
+     * @notice Returns ticket range information for a specific participant entry
+     * @param index Index of the participant entry
+     * @return owner Address of the ticket holder
+     * @return upperBound Upper bound of the ticket range
+     */
     function getTicketRange(uint256 index) external view returns (address owner, uint256 upperBound) {
         TicketRange memory range = participants[index];
         return (range.owner, range.upperBound);
     }
     
     /**
-     * @notice Obtiene el balance total del contrato
-     * @return Balance en wei
+     * @notice Returns the total balance held in the contract
+     * @return Balance in wei
      */
     function getTotalBalance() external view returns (uint256) {
         return address(this).balance;
     }
     
     /**
-     * @notice Verifica si la rifa está activa para comprar tickets
-     * @return true si está activa y dentro del tiempo
+     * @notice Checks if the raffle is active and accepting ticket purchases
+     * @return True if raffle is active and within time duration
      */
     function isActive() external view returns (bool) {
         return state == RaffleState.Active && 
@@ -319,8 +295,8 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
     }
     
     /**
-     * @notice Obtiene el tiempo restante de la rifa
-     * @return Segundos restantes, 0 si ya terminó
+     * @notice Returns the remaining time until raffle ends
+     * @return Remaining seconds, 0 if already ended
      */
     function getTimeRemaining() external view returns (uint256) {
         uint256 endTime = raffleStartTime + raffleDuration;
@@ -331,9 +307,9 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
     }
     
     /**
-     * @notice Obtiene información del ganador potencial sin ejecutar el sorteo
-     * @param entropySeed Entropía de prueba
-     * @return Dirección del potencial ganador
+     * @notice Previews potential winner without executing the draw
+     * @param entropySeed Test entropy value
+     * @return Address of the potential winner
      */
     function previewWinner(bytes32 entropySeed) external view returns (address) {
         require(participants.length > 0, "No participants");
@@ -341,16 +317,15 @@ contract ProjectRaffle is Ownable, ReentrancyGuard, PullPayment, IEntropyConsume
     }
     
     /**
-     * @notice Función de emergencia para forzar la selección del ganador (solo owner/admin)
-     * @dev Permite al owner seleccionar el ganador sin esperar a Pyth (para testing/emergencias)
-     * @param randomNumber Número aleatorio a usar para la selección
+     * @notice Emergency function to force winner selection without waiting for Pyth callback
+     * @dev Only callable by owner or admin, intended for testing or emergency situations
+     * @param randomNumber Random number to use for winner selection
      */
     function forceSelectWinner(bytes32 randomNumber) external onlyOwnerOrAdmin {
         require(state == RaffleState.Active || state == RaffleState.EntropyRequested, "Invalid state");
         require(participants.length > 0, "No participants");
         require(totalTickets > 0, "No tickets sold");
         
-        // Seleccionar ganador
         winner = _selectWinner(randomNumber);
         state = RaffleState.DrawExecuted;
         
