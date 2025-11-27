@@ -25,7 +25,7 @@ abstract contract BaseRaffle is
     uint32 public entropyCallbackGasLimit;
     uint256 public constant BASIS_POINTS = 10000;
     uint256 public platformFee;
-    uint256 public minTicketPrice;
+    uint256 public ticketPrice; // Fixed price per ticket
 
     enum RaffleState {
         Active, // Raffle is active, tickets can be purchased
@@ -56,8 +56,8 @@ abstract contract BaseRaffle is
 
     event TicketPurchased(
         address indexed buyer,
-        uint256 amount,
-        uint256 ticketCount
+        uint256 ticketCount,
+        uint256 totalPaid
     );
     event RaffleClosed(uint256 timestamp);
     event EntropyRequested(uint64 sequenceNumber);
@@ -79,7 +79,7 @@ abstract contract BaseRaffle is
         address _projectAddress,
         uint256 _raffleDuration,
         uint256 _platformFee,
-        uint256 _minTicketPrice,
+        uint256 _ticketPrice,
         uint32 _entropyCallbackGasLimit
     ) {
         require(_projectPercentage > 0, "Project percentage must be > 0");
@@ -93,7 +93,7 @@ abstract contract BaseRaffle is
         require(_raffleDuration > 0, "Duration must be > 0");
         require(_initialOwner != address(0), "Invalid owner address");
         require(_platformFee <= 1000, "Platform fee cannot exceed 10%");
-        require(_minTicketPrice > 0, "Min ticket price must be > 0");
+        require(_ticketPrice > 0, "Ticket price must be > 0");
         require(_entropyCallbackGasLimit >= 50000, "Gas limit too low");
         entropy = IEntropyV2(_entropyAddress);
         entropyCallbackGasLimit = _entropyCallbackGasLimit;
@@ -107,7 +107,7 @@ abstract contract BaseRaffle is
         raffleDuration = _raffleDuration;
         raffleStartTime = block.timestamp;
         platformFee = _platformFee;
-        minTicketPrice = _minTicketPrice;
+        ticketPrice = _ticketPrice;
 
         state = RaffleState.Active;
         _transferOwnership(_initialOwner);
@@ -115,27 +115,30 @@ abstract contract BaseRaffle is
 
     /**
      * @notice Allows users to purchase raffle tickets
-     * @dev 1 wei = 1 ticket, minimum purchase enforced by minTicketPrice
+     * @param numberOfTickets Number of tickets to purchase
+     * @dev Each ticket costs exactly ticketPrice wei
      * @dev Automatically closes the raffle when the time expires
      */
-    function buyTickets() external payable {
+    function buyTickets(uint256 numberOfTickets) external payable {
         require(state == RaffleState.Active, "Raffle not active");
         require(
             block.timestamp < raffleStartTime + raffleDuration,
             "Raffle ended"
         );
-        require(
-            msg.value >= minTicketPrice,
-            "Amount below minimum ticket price"
-        );
+        require(numberOfTickets > 0, "Must buy at least 1 ticket");
 
-        totalTickets += msg.value;
+        uint256 totalCost = ticketPrice * numberOfTickets;
+        require(msg.value == totalCost, "Incorrect payment amount");
+
+        uint256 newTotalTickets = totalTickets + numberOfTickets;
 
         participants.push(
-            TicketRange({owner: msg.sender, upperBound: totalTickets})
+            TicketRange({owner: msg.sender, upperBound: newTotalTickets})
         );
 
-        emit TicketPurchased(msg.sender, msg.value, totalTickets);
+        totalTickets = newTotalTickets;
+
+        emit TicketPurchased(msg.sender, numberOfTickets, msg.value);
 
         // Automatically close if time expired after this purchase
         if (
@@ -311,6 +314,34 @@ abstract contract BaseRaffle is
             return 0;
         }
         return endTime - block.timestamp;
+    }
+
+    /**
+     * @notice Returns the cost to purchase a specific number of tickets
+     * @param numberOfTickets Number of tickets
+     * @return Total cost in wei
+     */
+    function getTicketCost(uint256 numberOfTickets) external view returns (uint256) {
+        return ticketPrice * numberOfTickets;
+    }
+
+    /**
+     * @notice Returns how many tickets a user has purchased
+     * @param user Address to check
+     * @return Number of tickets owned by user
+     */
+    function getUserTicketCount(address user) external view returns (uint256) {
+        uint256 count = 0;
+        uint256 previousBound = 0;
+
+        for (uint256 i = 0; i < participants.length; i++) {
+            if (participants[i].owner == user) {
+                count += participants[i].upperBound - previousBound;
+            }
+            previousBound = participants[i].upperBound;
+        }
+
+        return count;
     }
 
     /**

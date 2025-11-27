@@ -34,7 +34,7 @@ contract MockEntropy is IEntropyV2 {
         return defaultProvider;
     }
 
-    // V2 API - métodos principales
+
     function getFeeV2() external view override returns (uint128) {
         return baseFee;
     }

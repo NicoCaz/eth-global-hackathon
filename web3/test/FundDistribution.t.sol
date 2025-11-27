@@ -21,6 +21,7 @@ contract FundDistributionTest {
     
     uint256 public constant PROJECT_PERCENTAGE = 5000; // 50%
     uint256 public constant RAFFLE_DURATION = 60;
+    uint256 public constant TICKET_PRICE = 0.01 ether; // 0.01 ETH per ticket
     
     BaseRaffle public raffle;
     
@@ -31,7 +32,8 @@ contract FundDistributionTest {
         address raffleAddress = factory.createSingleWinnerRaffle(
             PROJECT_PERCENTAGE,
             project,
-            RAFFLE_DURATION
+            RAFFLE_DURATION,
+            TICKET_PRICE
         );
         
         raffle = BaseRaffle(raffleAddress);
@@ -101,7 +103,8 @@ contract FundDistributionTest {
         address raffle100Address = factory.createSingleWinnerRaffle(
             10000, // 100%
             project,
-            RAFFLE_DURATION
+            RAFFLE_DURATION,
+            TICKET_PRICE
         );
         BaseRaffle raffle100 = BaseRaffle(raffle100Address);
         
@@ -142,7 +145,8 @@ contract FundDistributionTest {
         address raffleMinAddress = factory.createSingleWinnerRaffle(
             1, // 0.01%
             project,
-            RAFFLE_DURATION
+            RAFFLE_DURATION,
+            TICKET_PRICE
         );
         BaseRaffle raffleMin = BaseRaffle(raffleMinAddress);
         
@@ -181,7 +185,8 @@ contract FundDistributionTest {
         address raffle30Address = factory.createSingleWinnerRaffle(
             3000, // 30%
             project,
-            RAFFLE_DURATION
+            RAFFLE_DURATION,
+            TICKET_PRICE
         );
         BaseRaffle raffle30 = BaseRaffle(raffle30Address);
         
@@ -189,7 +194,8 @@ contract FundDistributionTest {
         address raffle70Address = factory.createSingleWinnerRaffle(
             7000, // 70%
             project,
-            RAFFLE_DURATION
+            RAFFLE_DURATION,
+            TICKET_PRICE
         );
         BaseRaffle raffle70 = BaseRaffle(raffle70Address);
         
@@ -345,10 +351,10 @@ contract FundDistributionTest {
         for (uint256 percentage = 1000; percentage <= 9000; percentage += 1000) { // 10%, 20%, ..., 90%
             uint256 platform = (amount * 5) / 10000;
             uint256 distributablePool = amount - platform;
-            uint256 project = (distributablePool * percentage) / 10000;
-            uint256 winner = distributablePool - project;
+            uint256 projectAmount = (distributablePool * percentage) / 10000;
+            uint256 winner = distributablePool - projectAmount;
             
-            uint256 total = platform + project + winner;
+            uint256 total = platform + projectAmount + winner;
             require(total <= amount, "Total should not exceed amount");
             require(amount - total <= 1, "Rounding should be minimal");
         }

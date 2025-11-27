@@ -57,17 +57,20 @@ contract RaffleFactory is Ownable {
      * @param projectPercentage Project allocation in basis points (5000 = 50%)
      * @param projectAddress Project address that will receive funds
      * @param raffleDuration Raffle duration in seconds
+     * @param ticketPrice Fixed price per ticket in wei (must be >= minTicketPrice)
      * @return Address of the created raffle contract
      */
     function createSingleWinnerRaffle(
         uint256 projectPercentage,
         address projectAddress,
-        uint256 raffleDuration
+        uint256 raffleDuration,
+        uint256 ticketPrice
     ) external returns (address) {
         require(projectPercentage <= 10000, "Project percentage cannot exceed 100%");
         require(projectPercentage > 0, "Project percentage must be > 0");
         require(projectAddress != address(0), "Invalid project address");
         require(raffleDuration > 0, "Duration must be > 0");
+        require(ticketPrice >= minTicketPrice, "Ticket price below minimum");
         
         SingleWinnerRaffle raffle = new SingleWinnerRaffle(
             projectPercentage,
@@ -77,7 +80,7 @@ contract RaffleFactory is Ownable {
             projectAddress,
             raffleDuration,
             platformFee,
-            minTicketPrice,
+            ticketPrice,
             entropyCallbackGasLimit
         );
         
@@ -230,7 +233,7 @@ contract RaffleFactory is Ownable {
     /**
      * @notice Returns the most recently created raffles
      * @param count Number of raffles to retrieve
-     * @return Array of addresses for the latest raffles
+     * @return Array of addresses for the latest raffles (most recent first)
      */
     function getLatestRaffles(uint256 count) external view returns (address[] memory) {
         uint256 total = raffles.length;
@@ -241,9 +244,9 @@ contract RaffleFactory is Ownable {
         uint256 actualCount = count > total ? total : count;
         address[] memory result = new address[](actualCount);
         
-        uint256 startIndex = total - actualCount;
+        // Return in reverse order (most recent first)
         for (uint256 i = 0; i < actualCount; i++) {
-            result[i] = address(raffles[startIndex + i]);
+            result[i] = address(raffles[total - 1 - i]);
         }
         
         return result;

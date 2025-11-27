@@ -16,6 +16,7 @@ contract RaffleFactoryTest {
     
     uint256 public constant PROJECT_PERCENTAGE = 5000; // 50%
     uint256 public constant RAFFLE_DURATION = 60;
+    uint256 public constant TICKET_PRICE = 0.01 ether; // 0.01 ETH per ticket
     
     function setUp() public {
         mockEntropy = new MockEntropy(factoryOwner, 0.0001 ether);
@@ -32,7 +33,8 @@ contract RaffleFactoryTest {
         address raffleAddress = factory.createSingleWinnerRaffle(
             PROJECT_PERCENTAGE,
             projectReceiver,
-            RAFFLE_DURATION
+            RAFFLE_DURATION,
+            TICKET_PRICE
         );
         
         require(raffleAddress != address(0), "Raffle address should not be zero");
@@ -41,19 +43,22 @@ contract RaffleFactoryTest {
         
         BaseRaffle raffle = BaseRaffle(raffleAddress);
         require(raffle.projectPercentage() == PROJECT_PERCENTAGE, "Wrong percentage");
+        require(raffle.ticketPrice() == TICKET_PRICE, "Wrong ticket price");
     }
     
     function test_CreateMultipleRaffles() public {
         address raffle1 = factory.createSingleWinnerRaffle(
             PROJECT_PERCENTAGE,
             projectReceiver,
-            RAFFLE_DURATION
+            RAFFLE_DURATION,
+            TICKET_PRICE
         );
         
         address raffle2 = factory.createSingleWinnerRaffle(
             PROJECT_PERCENTAGE,
             projectReceiver,
-            RAFFLE_DURATION
+            RAFFLE_DURATION,
+            TICKET_PRICE
         );
         
         require(factory.getRaffleCount() == 2, "Should have 2 raffles");
@@ -66,7 +71,8 @@ contract RaffleFactoryTest {
         address raffleAddress = factory.createSingleWinnerRaffle(
             PROJECT_PERCENTAGE,
             projectReceiver,
-            RAFFLE_DURATION
+            RAFFLE_DURATION,
+            TICKET_PRICE
         );
         
         (
@@ -86,13 +92,15 @@ contract RaffleFactoryTest {
         address raffle1 = factory.createSingleWinnerRaffle(
             PROJECT_PERCENTAGE,
             projectReceiver,
-            RAFFLE_DURATION
+            RAFFLE_DURATION,
+            TICKET_PRICE
         );
         
         address raffle2 = factory.createSingleWinnerRaffle(
             PROJECT_PERCENTAGE,
             projectReceiver,
-            RAFFLE_DURATION
+            RAFFLE_DURATION,
+            TICKET_PRICE
         );
         
         (address[] memory allRaffles, bool hasMore) = factory.getAllRaffles(0, 10);
@@ -106,13 +114,15 @@ contract RaffleFactoryTest {
         address raffle1 = factory.createSingleWinnerRaffle(
             PROJECT_PERCENTAGE,
             projectReceiver,
-            RAFFLE_DURATION
+            RAFFLE_DURATION,
+            TICKET_PRICE
         );
         
         address raffle2 = factory.createSingleWinnerRaffle(
             PROJECT_PERCENTAGE,
             projectReceiver,
-            RAFFLE_DURATION
+            RAFFLE_DURATION,
+            TICKET_PRICE
         );
         
         address[] memory latest = factory.getLatestRaffles(1);
@@ -123,5 +133,11 @@ contract RaffleFactoryTest {
         require(latest2.length == 2, "Should return 2 raffles");
         require(latest2[0] == raffle2, "First should be latest");
         require(latest2[1] == raffle1, "Second should be previous");
+    }
+    
+    function test_TicketPriceValidation() public view {
+        // Verify that factory has minimum ticket price
+        uint256 minPrice = factory.minTicketPrice();
+        require(minPrice == 0.0001 ether, "Min ticket price should be 0.0001 ether");
     }
 }

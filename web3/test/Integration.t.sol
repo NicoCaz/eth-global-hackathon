@@ -27,6 +27,7 @@ contract IntegrationTest {
     uint256 public constant PROJECT_PERCENTAGE_1 = 3000; // 30%
     uint256 public constant PROJECT_PERCENTAGE_2 = 7000; // 70%
     uint256 public constant RAFFLE_DURATION = 3600; // 1 hour
+    uint256 public constant TICKET_PRICE = 0.01 ether; // 0.01 ETH per ticket
     
     BaseRaffle public raffle1;
     BaseRaffle public raffle2;
@@ -42,7 +43,8 @@ contract IntegrationTest {
         address raffle1Address = factory.createSingleWinnerRaffle(
             PROJECT_PERCENTAGE_1,
             project1,
-            RAFFLE_DURATION
+            RAFFLE_DURATION,
+            TICKET_PRICE
         );
         raffle1 = BaseRaffle(raffle1Address);
         
@@ -50,19 +52,15 @@ contract IntegrationTest {
         address raffle2Address = factory.createSingleWinnerRaffle(
             PROJECT_PERCENTAGE_2,
             project2,
-            RAFFLE_DURATION
+            RAFFLE_DURATION,
+            TICKET_PRICE
         );
         raffle2 = BaseRaffle(raffle2Address);
     }
     
     // ========== SCENARIO 1: Multiple Raffles, Multiple Users ==========
     
-    function test_MultipleRaffles_MultipleUsers_CompleteFlow() public {
-        // Raffle 1: 3 users buying different amounts
-        uint256 amount1_1 = 0.01 ether;
-        uint256 amount1_2 = 0.05 ether;
-        uint256 amount1_3 = 0.1 ether;
-        
+    function test_MultipleRaffles_MultipleUsers_CompleteFlow() public view {
         // Simulate purchases (in real test, these would be separate transactions)
         // Note: In Hardhat 3 Solidity tests, we test the state changes
         require(raffle1.totalTickets() == 0, "Should start with 0 tickets");
@@ -82,9 +80,8 @@ contract IntegrationTest {
     
     // ========== SCENARIO 2: Edge Cases - Minimum Values ==========
     
-    function test_EdgeCase_MinimumTicketPrice() public view {
-        uint256 minPrice = 0.0001 ether;
-        require(raffle1.minTicketPrice() == minPrice, "Minimum ticket price should be 0.0001 ETH");
+    function test_EdgeCase_TicketPrice() public view {
+        require(raffle1.ticketPrice() == TICKET_PRICE, "Ticket price should be set correctly");
     }
     
     function test_EdgeCase_MinimumProjectPercentage() public {
@@ -92,7 +89,8 @@ contract IntegrationTest {
         address minRaffle = factory.createSingleWinnerRaffle(
             1, // 0.01%
             project1,
-            RAFFLE_DURATION
+            RAFFLE_DURATION,
+            TICKET_PRICE
         );
         BaseRaffle raffle = BaseRaffle(minRaffle);
         require(raffle.projectPercentage() == 1, "Should accept minimum percentage");
@@ -103,7 +101,8 @@ contract IntegrationTest {
         address minDurationRaffle = factory.createSingleWinnerRaffle(
             PROJECT_PERCENTAGE_1,
             project1,
-            1 // 1 second
+            1, // 1 second
+            TICKET_PRICE
         );
         BaseRaffle raffle = BaseRaffle(minDurationRaffle);
         require(raffle.isActive() == true, "Should be active initially");
@@ -118,7 +117,8 @@ contract IntegrationTest {
         address maxRaffle = factory.createSingleWinnerRaffle(
             maxPercentage,
             project1,
-            RAFFLE_DURATION
+            RAFFLE_DURATION,
+            TICKET_PRICE
         );
         BaseRaffle raffle = BaseRaffle(maxRaffle);
         require(raffle.projectPercentage() == maxPercentage, "Should accept 100% percentage");
@@ -130,7 +130,8 @@ contract IntegrationTest {
         try factory.createSingleWinnerRaffle(
             10001, // 100.01% - exceeds 100%
             project1,
-            RAFFLE_DURATION
+            RAFFLE_DURATION,
+            TICKET_PRICE
         ) {
             // Should not reach here
         } catch {
@@ -191,7 +192,8 @@ contract IntegrationTest {
             factory.createSingleWinnerRaffle(
                 PROJECT_PERCENTAGE_1,
                 project1,
-                RAFFLE_DURATION
+                RAFFLE_DURATION,
+                TICKET_PRICE
             );
         }
         
@@ -200,9 +202,9 @@ contract IntegrationTest {
     
     function test_Factory_GetLatestRaffles_LessThanTotal() public {
         // Create 3 more raffles
-        address r3 = factory.createSingleWinnerRaffle(PROJECT_PERCENTAGE_1, project1, RAFFLE_DURATION);
-        address r4 = factory.createSingleWinnerRaffle(PROJECT_PERCENTAGE_1, project1, RAFFLE_DURATION);
-        address r5 = factory.createSingleWinnerRaffle(PROJECT_PERCENTAGE_1, project1, RAFFLE_DURATION);
+        factory.createSingleWinnerRaffle(PROJECT_PERCENTAGE_1, project1, RAFFLE_DURATION, TICKET_PRICE);
+        address r4 = factory.createSingleWinnerRaffle(PROJECT_PERCENTAGE_1, project1, RAFFLE_DURATION, TICKET_PRICE);
+        address r5 = factory.createSingleWinnerRaffle(PROJECT_PERCENTAGE_1, project1, RAFFLE_DURATION, TICKET_PRICE);
         
         // Get latest 2
         address[] memory latest = factory.getLatestRaffles(2);
@@ -211,7 +213,7 @@ contract IntegrationTest {
         require(latest[1] == r4, "Second should be previous");
     }
     
-    function test_Factory_GetLatestRaffles_MoreThanTotal() public {
+    function test_Factory_GetLatestRaffles_MoreThanTotal() public view {
         // Only 2 raffles exist, request 10
         address[] memory latest = factory.getLatestRaffles(10);
         require(latest.length == 2, "Should return only existing raffles");
@@ -283,7 +285,8 @@ contract IntegrationTest {
         address raffle = factory.createSingleWinnerRaffle(
             1, // 1 basis point = 0.01%
             project1,
-            RAFFLE_DURATION
+            RAFFLE_DURATION,
+            TICKET_PRICE
         );
         BaseRaffle r = BaseRaffle(raffle);
         require(r.projectPercentage() == 1, "Should accept 1 basis point");
@@ -294,7 +297,8 @@ contract IntegrationTest {
         address raffle = factory.createSingleWinnerRaffle(
             10000, // 100% (max allowed)
             project1,
-            RAFFLE_DURATION
+            RAFFLE_DURATION,
+            TICKET_PRICE
         );
         BaseRaffle r = BaseRaffle(raffle);
         require(r.projectPercentage() == 10000, "Should accept 10000 basis points (100%)");
@@ -327,17 +331,14 @@ contract IntegrationTest {
         require(raffle1.platformFee() == 5, "platformFee should be 5 (0.05%)");
     }
     
-    function test_Constants_MinTicketPrice() public view {
-        require(raffle1.minTicketPrice() == 0.0001 ether, "minTicketPrice should be 0.0001 ETH");
+    function test_Constants_TicketPrice() public view {
+        require(raffle1.ticketPrice() == TICKET_PRICE, "ticketPrice should be set correctly");
     }
     
     // ========== SCENARIO 15: Factory Owner Operations ==========
     
-    function test_FactoryOwner_UpdateEntropy() public {
-        MockEntropy newEntropy = new MockEntropy(factoryOwner, 0.0002 ether);
-        
-        // This would be called by factory owner in real scenario
-        // For now, we verify the factory has the update function
+    function test_FactoryOwner_UpdateEntropy() public view {
+        // Verify the factory has the correct entropy address
         require(factory.entropyAddress() == address(mockEntropy), "Initial entropy should be set");
     }
 }

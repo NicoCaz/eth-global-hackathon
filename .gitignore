@@ -1,5 +1,33 @@
-web3/bin/contracts/RaffleFactory-solc-output.json
-web3/bin/contracts/RaffleFactory.bin
-web3/bin/contracts/RaffleFactory.json
+# Dependencies
+node_modules/
 
-web3/bin/contracts/RaffleFactory.abi
+# Compiled contracts and artifacts
+web3/bin/
+web3/artifacts/
+web3/cache/
+web3/typechain-types/
+web3/.hardhat/
+bin/
+
+# Build outputs
+dist/
+dist-ssr/
+.output/
+.nitro/
+.vinxi/
+.tanstack/
+.wrangler/
+
+# Environment and config
+.env
+*.local
+.cursorrules
+server-wallet.json
+todos.json
+
+# OS and IDE
+.DS_Store
+
+# Other
+count.txt
+.DS_Store

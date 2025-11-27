@@ -20,6 +20,7 @@ contract DistributionEdgeCasesTest {
     address public project = address(0x5);
     
     uint256 public constant RAFFLE_DURATION = 60;
+    uint256 public constant TICKET_PRICE = 0.01 ether;
     
     function setUp() public {
         mockEntropy = new MockEntropy(factoryOwner, 0.0001 ether);
@@ -31,7 +32,8 @@ contract DistributionEdgeCasesTest {
         address raffleAddress = factory.createSingleWinnerRaffle(
             10000, // 100%
             project,
-            RAFFLE_DURATION
+            RAFFLE_DURATION,
+            TICKET_PRICE
         );
         BaseRaffle raffle = BaseRaffle(raffleAddress);
         
@@ -43,7 +45,8 @@ contract DistributionEdgeCasesTest {
         address raffleAddress = factory.createSingleWinnerRaffle(
             10000, // 100%
             project,
-            RAFFLE_DURATION
+            RAFFLE_DURATION,
+            TICKET_PRICE
         );
         BaseRaffle raffle = BaseRaffle(raffleAddress);
         
@@ -63,7 +66,8 @@ contract DistributionEdgeCasesTest {
         address raffleAddress = factory.createSingleWinnerRaffle(
             5000, // 50%
             project,
-            RAFFLE_DURATION
+            RAFFLE_DURATION,
+            TICKET_PRICE
         );
         BaseRaffle raffle = BaseRaffle(raffleAddress);
         
@@ -80,7 +84,8 @@ contract DistributionEdgeCasesTest {
         address raffleAddress = factory.createSingleWinnerRaffle(
             1, // 0.01% (minimum)
             project,
-            RAFFLE_DURATION
+            RAFFLE_DURATION,
+            TICKET_PRICE
         );
         BaseRaffle raffle = BaseRaffle(raffleAddress);
         
@@ -97,7 +102,8 @@ contract DistributionEdgeCasesTest {
         address raffleAddress = factory.createSingleWinnerRaffle(
             5000,
             project,
-            RAFFLE_DURATION
+            RAFFLE_DURATION,
+            TICKET_PRICE
         );
         BaseRaffle raffle = BaseRaffle(raffleAddress);
         
@@ -107,21 +113,21 @@ contract DistributionEdgeCasesTest {
     
     function test_ProjectPercentage_Range() public {
         // Test minimum (1 basis point)
-        address minRaffle = factory.createSingleWinnerRaffle(1, project, RAFFLE_DURATION);
+        address minRaffle = factory.createSingleWinnerRaffle(1, project, RAFFLE_DURATION, TICKET_PRICE);
         require(BaseRaffle(minRaffle).projectPercentage() == 1, "Min should be 1");
         
         // Test maximum (10000 basis points = 100%)
-        address maxRaffle = factory.createSingleWinnerRaffle(10000, project, RAFFLE_DURATION);
+        address maxRaffle = factory.createSingleWinnerRaffle(10000, project, RAFFLE_DURATION, TICKET_PRICE);
         require(BaseRaffle(maxRaffle).projectPercentage() == 10000, "Max should be 10000");
         
         // Test middle (5000 basis points = 50%)
-        address midRaffle = factory.createSingleWinnerRaffle(5000, project, RAFFLE_DURATION);
+        address midRaffle = factory.createSingleWinnerRaffle(5000, project, RAFFLE_DURATION, TICKET_PRICE);
         require(BaseRaffle(midRaffle).projectPercentage() == 5000, "Mid should be 5000");
     }
     
     function test_ProjectPercentage_RejectsZero() public {
         bool reverted = false;
-        try factory.createSingleWinnerRaffle(0, project, RAFFLE_DURATION) {
+        try factory.createSingleWinnerRaffle(0, project, RAFFLE_DURATION, TICKET_PRICE) {
             // Should not reach here
         } catch {
             reverted = true;
@@ -131,7 +137,7 @@ contract DistributionEdgeCasesTest {
     
     function test_ProjectPercentage_RejectsOver100() public {
         bool reverted = false;
-        try factory.createSingleWinnerRaffle(10001, project, RAFFLE_DURATION) {
+        try factory.createSingleWinnerRaffle(10001, project, RAFFLE_DURATION, TICKET_PRICE) {
             // Should not reach here
         } catch {
             reverted = true;

@@ -22,7 +22,7 @@ contract SingleWinnerRaffle is BaseRaffle {
         address _projectAddress,
         uint256 _raffleDuration,
         uint256 _platformFee,
-        uint256 _minTicketPrice,
+        uint256 _ticketPrice,
         uint32 _entropyCallbackGasLimit
     )
         BaseRaffle(
@@ -33,7 +33,7 @@ contract SingleWinnerRaffle is BaseRaffle {
             _projectAddress,
             _raffleDuration,
             _platformFee,
-            _minTicketPrice,
+            _ticketPrice,
             _entropyCallbackGasLimit
         )
     {}
